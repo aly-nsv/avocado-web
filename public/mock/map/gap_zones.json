@@ -1,0 +1,66 @@
+[
+  {
+    "id": "gap_MI_001",
+    "type": "dark_zone",
+    "coords": [-83.3000, 42.3000],
+    "radius": 2.5,
+    "road": "I-94 West",
+    "road_class": "motorway",
+    "functional_class": 1,
+    "gap_data": {
+      "coverage_type": "camera_gap",
+      "last_coverage": "5.2 miles ago", 
+      "next_coverage": "3.8 miles ahead",
+      "crash_density": 0.3,
+      "risk_level": "medium"
+    }
+  },
+  {
+    "id": "gap_MI_002",
+    "type": "sensor_gap",
+    "coords": [-83.0458, 42.7000],
+    "radius": 1.8,
+    "road": "I-75 North",
+    "road_class": "motorway",
+    "functional_class": 1,
+    "gap_data": {
+      "coverage_type": "sensor_gap",
+      "last_coverage": "2.1 miles ago",
+      "next_coverage": "4.5 miles ahead",
+      "crash_density": 0.15,
+      "risk_level": "low"
+    }
+  },
+  {
+    "id": "gap_TX_001",
+    "type": "communication_dead_zone",
+    "coords": [-97.7800, 30.4000],
+    "radius": 3.2,
+    "road": "I-35 North",
+    "road_class": "motorway", 
+    "functional_class": 1,
+    "gap_data": {
+      "coverage_type": "communication_gap",
+      "last_coverage": "6.7 miles ago",
+      "next_coverage": "8.2 miles ahead",
+      "crash_density": 0.45,
+      "risk_level": "high"
+    }
+  },
+  {
+    "id": "gap_FL_001",
+    "type": "monitoring_gap",
+    "coords": [-80.1918, 26.2000],
+    "radius": 2.1,
+    "road": "I-95 North",
+    "road_class": "motorway",
+    "functional_class": 1,
+    "gap_data": {
+      "coverage_type": "monitoring_gap",
+      "last_coverage": "3.4 miles ago",
+      "next_coverage": "2.9 miles ahead",
+      "crash_density": 0.25,
+      "risk_level": "medium"
+    }
+  }
+]

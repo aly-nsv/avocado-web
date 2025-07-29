@@ -1,0 +1,66 @@
+[
+  {
+    "id": "ml_001",
+    "type": "traffic_pattern_anomaly",
+    "coords": [-83.0700, 42.3300],
+    "timestamp": "2025-07-29T14:20:00Z",
+    "confidence": 0.89,
+    "road": "I-94",
+    "road_class": "motorway",
+    "functional_class": 1,
+    "insight_data": {
+      "anomaly_type": "unusual_speed_pattern",
+      "expected_speed": 65,
+      "observed_speed": 25,
+      "severity": "medium"
+    }
+  },
+  {
+    "id": "ml_002", 
+    "type": "queue_prediction",
+    "coords": [-83.0458, 42.4800],
+    "timestamp": "2025-07-29T14:18:00Z",
+    "confidence": 0.94,
+    "road": "I-75",
+    "road_class": "motorway",
+    "functional_class": 1,
+    "insight_data": {
+      "prediction_type": "queue_building",
+      "estimated_length": "0.8 miles",
+      "time_to_clear": "15 minutes",
+      "severity": "high"
+    }
+  },
+  {
+    "id": "ml_003",
+    "type": "congestion_hotspot",
+    "coords": [-97.7400, 30.2800],
+    "timestamp": "2025-07-29T14:00:00Z",
+    "confidence": 0.87,
+    "road": "I-35",
+    "road_class": "motorway",
+    "functional_class": 1,
+    "insight_data": {
+      "hotspot_type": "recurring_congestion",
+      "peak_delay": "12 minutes",
+      "frequency": "daily",
+      "severity": "high"
+    }
+  },
+  {
+    "id": "ml_004",
+    "type": "incident_probability",
+    "coords": [-80.1900, 25.7700],
+    "timestamp": "2025-07-29T13:45:00Z",
+    "confidence": 0.76,
+    "road": "I-95",
+    "road_class": "motorway",
+    "functional_class": 1,
+    "insight_data": {
+      "probability_type": "accident_risk",
+      "risk_level": "elevated",
+      "contributing_factors": ["heavy_rain", "high_speed"],
+      "severity": "medium"
+    }
+  }
+]

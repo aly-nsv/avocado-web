@@ -1,0 +1,110 @@
+[
+  {
+    "id": "inc_4592",
+    "primary_alert_id": "waze_006",
+    "camera_upstream": "cam_MI_I696_001",
+    "camera_downstream": "cam_MI_I94_001",
+    "actors": ["veh_123", "veh_124"],
+    "insights": [
+      {
+        "t": "2025-07-29T13:12:00Z",
+        "type": "accident_detected",
+        "description": "Initial accident report from Waze user"
+      },
+      {
+        "t": "2025-07-29T13:15:00Z",
+        "type": "emergency_response",
+        "description": "Emergency services dispatched"
+      },
+      {
+        "t": "2025-07-29T13:18:00Z",
+        "type": "traffic_impact",
+        "description": "Right lane blocked, minor delays building"
+      }
+    ],
+    "status": "open",
+    "severity": "major",
+    "coords": [-83.0458, 42.4600]
+  },
+  {
+    "id": "inc_4593",
+    "primary_alert_id": "cv_005",
+    "camera_upstream": "cam_TX_I35_001",
+    "camera_downstream": "cam_TX_I35_002",
+    "actors": ["veh_401", "veh_402", "veh_403"],
+    "insights": [
+      {
+        "t": "2025-07-29T13:55:00Z",
+        "type": "hard_braking_cluster",
+        "description": "Multiple vehicles braking suddenly detected"
+      },
+      {
+        "t": "2025-07-29T13:57:00Z",
+        "type": "queue_building",
+        "description": "Traffic backup forming behind incident"
+      },
+      {
+        "t": "2025-07-29T14:02:00Z",
+        "type": "lane_closure",
+        "description": "Left lane temporarily blocked"
+      }
+    ],
+    "status": "monitoring",
+    "severity": "minor",
+    "coords": [-97.7500, 30.2800]
+  },
+  {
+    "id": "inc_4594",
+    "primary_alert_id": "cv_007",
+    "camera_upstream": "cam_MI_I75_002",
+    "camera_downstream": "cam_MI_I75_001",
+    "actors": ["veh_205"],
+    "insights": [
+      {
+        "t": "2025-07-29T14:18:00Z",
+        "type": "stopped_vehicle",
+        "description": "Vehicle stopped in travel lane"
+      },
+      {
+        "t": "2025-07-29T14:20:00Z",
+        "type": "hazard_verification",
+        "description": "Camera confirms vehicle obstruction"
+      },
+      {
+        "t": "2025-07-29T14:23:00Z",
+        "type": "tow_dispatched",
+        "description": "Tow truck en route to scene"
+      }
+    ],
+    "status": "responding",
+    "severity": "major",
+    "coords": [-83.0458, 42.8100]
+  },
+  {
+    "id": "inc_4595",
+    "primary_alert_id": "waze_005",
+    "camera_upstream": "cam_FL_I4_001",
+    "camera_downstream": "cam_FL_I4_002",
+    "actors": [],
+    "insights": [
+      {
+        "t": "2025-07-29T11:45:00Z",
+        "type": "construction_zone",
+        "description": "Active construction reported by users"
+      },
+      {
+        "t": "2025-07-29T12:00:00Z",
+        "type": "lane_restriction",
+        "description": "Two lanes reduced to one"
+      },
+      {
+        "t": "2025-07-29T14:00:00Z",
+        "type": "work_zone_active",
+        "description": "Construction crew on site"
+      }
+    ],
+    "status": "scheduled",
+    "severity": "minor",
+    "coords": [-81.3800, 28.5400]
+  }
+]

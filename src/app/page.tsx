@@ -1,20 +1,60 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import FilterBar from '@/components/FilterBar';
 import AlertsPanel from '@/components/AlertsPanel';
+import VideoDrawer from '@/components/VideoDrawer';
+import IncidentDrawer from '@/components/IncidentDrawer';
 import { useStateMap } from '@/components/providers/StateMapProvider';
 import { Alert, CorridorData } from '@/types/dashboard';
 import { MapIcon, TruckIcon, ExclamationTriangleIcon, ChartBarIcon } from '@heroicons/react/24/solid';
+
+// Network Map interfaces
+interface Camera {
+  id: string;
+  state: string;
+  coords: [number, number];
+  road: string;
+  milepost: number;
+  status: 'online' | 'offline';
+  stream_url: string | null;
+}
+
+interface MapAlert {
+  id: string;
+  type: string;
+  subtype?: string;
+  coords: [number, number];
+  timestamp: string;
+  source: 'Waze' | 'ConnectedVehicle';
+  confidence: number;
+  speed?: number;
+}
+
+interface Incident {
+  id: string;
+  primary_alert_id: string;
+  camera_upstream: string;
+  camera_downstream: string;
+  actors: string[];
+  insights: Array<{
+    t: string;
+    type: string;
+    description: string;
+  }>;
+  status: 'open' | 'monitoring' | 'responding' | 'scheduled';
+  severity: 'minor' | 'major';
+  coords: [number, number];
+}
 
 // Dynamic import prevents SSR issues with MapBox
 const StateMap = dynamic(() => import('@/components/StateMap'), {
   ssr: false,
   loading: () => (
     <div className="flex items-center justify-center h-full bg-neutral-900">
-      <div className="text-lg text-neutral-400 animate-pulse">Loading map...</div>
+      <div className="text-lg text-neutral-400 animate-pulse">Loading Network Map...</div>
     </div>
   ),
 });
@@ -32,42 +72,99 @@ export default function HomePage() {
   } = useStateMap();
 
   const [corridorData, setCorridorData] = useState<CorridorData | null>(null);
+  const [mockData, setMockData] = useState<{
+    cameras: Camera[];
+    mapAlerts: MapAlert[];
+    incidents: Incident[];
+  }>({ cameras: [], mapAlerts: [], incidents: [] });
+  
+  // Drawer states
+  const [selectedCameras, setSelectedCameras] = useState<Camera[]>([]);
+  const [selectedIncident, setSelectedIncident] = useState<Incident | null>(null);
+  const [isVideoDrawerOpen, setIsVideoDrawerOpen] = useState(false);
+  const [isIncidentDrawerOpen, setIsIncidentDrawerOpen] = useState(false);
 
   // Load initial data on component mount
   useEffect(() => {
     const loadInitialData = async () => {
       try {
-        // Load corridor data for the selected state
-        const corridorResponse = await fetch(`/api/corridors/${selectedState.code}`);
-        if (corridorResponse.ok) {
-          const corridors: CorridorData = await corridorResponse.json();
-          setCorridorData(corridors);
-        }
-
-        // Load current alerts
+        // Load API alerts (existing)
         const alertsResponse = await fetch('/api/alerts');
         if (alertsResponse.ok) {
           const alertsData: Alert[] = await alertsResponse.json();
           setAlerts(alertsData);
         }
+
+        // Load mock network data
+        const [camerasRes, mapAlertsRes, incidentsRes] = await Promise.all([
+          fetch('/mock/map/cameras.json'),
+          fetch('/mock/map/alerts.json'),
+          fetch('/mock/map/incidents.json')
+        ]);
+
+        const cameras = await camerasRes.json();
+        const mapAlerts = await mapAlertsRes.json();
+        const incidents = await incidentsRes.json();
+
+        setMockData({ cameras, mapAlerts, incidents });
+
+        // Set mock corridor data for now
+        setCorridorData({
+          highways: { type: 'FeatureCollection', features: [] },
+          infrastructure: { type: 'FeatureCollection', features: [] },
+        });
       } catch (error) {
         console.error('Failed to load initial data:', error);
-        // Set mock data for development
         setCorridorData({
-          highways: {
-            type: 'FeatureCollection',
-            features: [],
-          },
-          infrastructure: {
-            type: 'FeatureCollection',
-            features: [],
-          },
+          highways: { type: 'FeatureCollection', features: [] },
+          infrastructure: { type: 'FeatureCollection', features: [] },
         });
       }
     };
 
     loadInitialData();
   }, [selectedState.code, setAlerts]);
+
+  // Calculate nearest cameras for alert
+  const findNearestCameras = (alertCoords: [number, number], count: number = 2): Camera[] => {
+    const stateCameras = mockData.cameras.filter(cam => cam.state === selectedState.code);
+    
+    const camerasWithDistance = stateCameras.map(camera => {
+      const distance = Math.sqrt(
+        Math.pow(camera.coords[0] - alertCoords[0], 2) + 
+        Math.pow(camera.coords[1] - alertCoords[1], 2)
+      );
+      return { camera, distance };
+    });
+
+    return camerasWithDistance
+      .sort((a, b) => a.distance - b.distance)
+      .slice(0, count)
+      .map(item => item.camera);
+  };
+
+  // Handler functions for map interactions
+  const handleCameraClick = useCallback((camera: Camera) => {
+    setSelectedCameras([camera]);
+    setIsVideoDrawerOpen(true);
+    setIsAlertsPanelOpen(false);
+    setIsIncidentDrawerOpen(false);
+  }, []);
+
+  const handleAlertClick = useCallback((alert: MapAlert) => {
+    const nearestCameras = findNearestCameras(alert.coords);
+    setSelectedCameras(nearestCameras);
+    setIsVideoDrawerOpen(true);
+    setIsAlertsPanelOpen(false);
+    setIsIncidentDrawerOpen(false);
+  }, [mockData.cameras, selectedState.code]);
+
+  const handleIncidentClick = useCallback((incident: Incident) => {
+    setSelectedIncident(incident);
+    setIsIncidentDrawerOpen(true);
+    setIsAlertsPanelOpen(false);
+    setIsVideoDrawerOpen(false);
+  }, []);
 
   return (
     <div className="flex flex-col h-screen bg-background">
@@ -78,12 +175,12 @@ export default function HomePage() {
             <div className="h-8 w-8 bg-gradient-to-r from-primary to-highlight rounded-lg flex items-center justify-center">
               <MapIcon className="h-5 w-5 text-white" />
             </div>
-            <h1 className="text-xl font-bold text-blue-highlight">AVocado Mobility</h1>
+            <h1 className="text-xl font-bold text-primary">AVocado Network Map</h1>
           </div>
           <div className="flex space-x-6">
             <Link href="/" className="text-primary font-medium flex items-center space-x-1">
               <MapIcon className="h-4 w-4" />
-              <span>Dashboard</span>
+              <span>Network Map</span>
             </Link>
             <Link href={"/incidents" as any} className="text-neutral-600 hover:text-neutral-900 flex items-center space-x-1 transition-colors">
               <ExclamationTriangleIcon className="h-4 w-4" />
@@ -107,14 +204,18 @@ export default function HomePage() {
         onStateChange={setSelectedState}
         activeFilters={activeFilters}
         onFiltersChange={setActiveFilters}
-        onToggleAlerts={() => setIsAlertsPanelOpen(!isAlertsPanelOpen)}
+        onToggleAlerts={() => {
+          setIsAlertsPanelOpen(!isAlertsPanelOpen);
+          setIsVideoDrawerOpen(false);
+          setIsIncidentDrawerOpen(false);
+        }}
       />
 
       {/* Main Content Area */}
-      <div className="flex-1 relative">
+      <div className="flex-1 relative overflow-hidden">
         {/* Map Container */}
         <div className={`h-full transition-all duration-300 ${
-          isAlertsPanelOpen ? 'mr-96' : 'mr-0'
+          isAlertsPanelOpen || isVideoDrawerOpen || isIncidentDrawerOpen ? 'mr-[480px]' : 'mr-0'
         }`}>
           {corridorData && (
             <StateMap
@@ -122,16 +223,36 @@ export default function HomePage() {
               activeFilters={activeFilters}
               corridorData={corridorData}
               alerts={alerts}
+              onCameraClick={handleCameraClick}
+              onAlertClick={handleAlertClick}
+              onIncidentClick={handleIncidentClick}
             />
           )}
         </div>
 
-        {/* Sliding Alerts Panel */}
-        <AlertsPanel
-          isOpen={isAlertsPanelOpen}
-          alerts={alerts}
-          onClose={() => setIsAlertsPanelOpen(false)}
-        />
+        {/* Right-side Drawers */}
+        {isAlertsPanelOpen && (
+          <AlertsPanel
+            isOpen={isAlertsPanelOpen}
+            alerts={alerts}
+            onClose={() => setIsAlertsPanelOpen(false)}
+          />
+        )}
+
+        {isVideoDrawerOpen && (
+          <VideoDrawer
+            cameras={selectedCameras}
+            onClose={() => setIsVideoDrawerOpen(false)}
+          />
+        )}
+
+        {isIncidentDrawerOpen && selectedIncident && (
+          <IncidentDrawer
+            incident={selectedIncident}
+            cameras={mockData.cameras}
+            onClose={() => setIsIncidentDrawerOpen(false)}
+          />
+        )}
       </div>
     </div>
   );

@@ -1,0 +1,124 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "I-94",
+        "state": "MI",
+        "class": "motorway"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [-83.0458, 42.3314],
+          [-83.2000, 42.3500],
+          [-83.7430, 42.2814],
+          [-84.5555, 42.3314],
+          [-85.0000, 42.4000]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "I-75",
+        "state": "MI",
+        "class": "motorway"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [-83.0458, 42.3314],
+          [-83.0458, 42.5000],
+          [-83.0458, 42.8000],
+          [-83.0458, 43.2000]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "I-696",
+        "state": "MI",
+        "class": "motorway"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [-83.0458, 42.4584],
+          [-83.2000, 42.4584],
+          [-83.5000, 42.4584]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "I-35",
+        "state": "TX",
+        "class": "motorway"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [-97.7431, 30.2672],
+          [-97.7431, 30.5000],
+          [-97.7431, 31.0000],
+          [-97.7431, 31.5000]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "I-10",
+        "state": "TX",
+        "class": "motorway"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [-97.7431, 30.2672],
+          [-98.0000, 30.2672],
+          [-98.5000, 30.2672],
+          [-99.0000, 30.2672]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "I-95",
+        "state": "FL",
+        "class": "motorway"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [-80.1918, 25.7617],
+          [-80.1918, 26.0000],
+          [-80.1918, 26.5000],
+          [-80.1918, 27.0000]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "I-4",
+        "state": "FL",
+        "class": "motorway"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [-81.3792, 28.5383],
+          [-81.5000, 28.4000],
+          [-82.0000, 28.0000],
+          [-82.4572, 27.9506]
+        ]
+      }
+    }
+  ]
+}

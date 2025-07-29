@@ -9,15 +9,15 @@ const SEVERITY_STYLES: Record<AlertSeverity, {
   badge: string;
 }> = {
   info: {
-    container: 'border-l-4 border-l-neutral-400 bg-neutral-50',
+    container: 'border-l-4 border-l-neutral-500 bg-white/85',
     badge: 'bg-neutral-100 text-neutral-800',
   },
   warning: {
-    container: 'border-l-4 border-l-yellow-400 bg-yellow-50',
+    container: 'border-l-4 border-l-yellow-500 bg-white/85',
     badge: 'bg-yellow-100 text-yellow-800',
   },
   critical: {
-    container: 'border-l-4 border-l-red-500 bg-red-50',
+    container: 'border-l-4 border-l-red-600 bg-white/85',
     badge: 'bg-red-100 text-red-800',
   },
 };
@@ -33,7 +33,7 @@ function AlertCard({ alert, onClick }: AlertCardProps) {
 
   return (
     <div 
-      className={`mx-4 my-3 p-4 rounded-lg shadow-sm cursor-pointer transition-transform hover:scale-[1.02] ${styles.container}`}
+      className={`mx-4 my-3 p-4 rounded-sm shadow-sm cursor-pointer transition-transform hover:scale-[1.02] ${styles.container}`}
       onClick={handleCardClick}
     >
       {/* Alert Header with Severity Badge */}
