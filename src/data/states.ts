@@ -2,6 +2,13 @@ import { StateInfo } from '@/types/dashboard';
 
 export const US_STATES: StateInfo[] = [
   {
+    code: 'FULL',
+    name: 'Full View',
+    center: [-98.5795, 39.8283], // Geographic center of the US
+    bounds: [[-125.0, 20.0], [-66.0, 50.0]], // Continental US bounds
+    zoomLevel: 4,
+  },
+  {
     code: 'CA',
     name: 'California',
     center: [-119.4179, 36.7783],

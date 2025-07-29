@@ -7,9 +7,9 @@ import { US_STATES } from '@/data/states';
 const StateMapContext = createContext<StateMapContextType | undefined>(undefined);
 
 export function StateMapProvider({ children }: StateMapProviderProps) {
-  // Initialize with Michigan as default state (as specified in requirements)
+  // Initialize with Full View as default state
   const [selectedState, setSelectedState] = useState<StateInfo>(
-    US_STATES.find(state => state.code === 'MI') || US_STATES[0]
+    US_STATES.find(state => state.code === 'FULL') || US_STATES[0]
   );
   
   const [activeFilters, setActiveFilters] = useState<FilterType[]>(['incidents']);

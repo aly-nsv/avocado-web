@@ -184,21 +184,40 @@ export default function StateMap({
   useEffect(() => {
     if (!map.current || !mapLoaded || !map.current.isStyleLoaded()) return;
 
-    // Create state boundary filter
-    const stateFilter = showAllStates ? 
-      ['has', 'class'] : // Show all roads
+    // Create state boundary filter - only apply geographic filtering if not Full View
+    const isFullView = selectedState.code === 'FULL';
+    const stateFilter = showAllStates || isFullView ? 
+      ['has', 'class'] : // Show all roads for full view or when showAllStates is true
       [
         'all',
-        ['has', 'class'],
-        // Approximate state filtering using bounds (more precise filtering would require state polygon data)
-        ['>=', ['get', 'x'], selectedState.bounds[0][0]], // west bound
-        ['<=', ['get', 'x'], selectedState.bounds[1][0]], // east bound
-        ['>=', ['get', 'y'], selectedState.bounds[0][1]], // south bound
-        ['<=', ['get', 'y'], selectedState.bounds[1][1]]  // north bound
+        ['has', 'class']
+        // Note: Mapbox Streets doesn't have precise state boundary data
+        // For proper state filtering, we would need to use state polygon geometries
+        // For now, geographic bounds filtering is disabled as it's not accurate enough
       ];
 
     // Primary highways (motorways & trunks) - highest importance
-    if (!map.current.getLayer('major-highways-primary')) {
+    if (!map.current.getLayer('major-highways-primary-border')) {
+      // Highway border (darker yellow)
+      map.current.addLayer({
+        id: 'major-highways-primary-border',
+        type: 'line',
+        source: 'composite',
+        'source-layer': 'road',
+        filter: ['all', ['in', 'class', 'motorway', 'trunk']],
+        paint: {
+          'line-color': '#E6C200', // Darker yellow for border
+          'line-width': [
+            'interpolate', ['linear'], ['zoom'],
+            5, 2.2,    // Thin at low zoom
+            10, 3.2,   // Medium at mid zoom  
+            14, 5.2    // Thicker at high zoom
+          ],
+          'line-opacity': 0.9,
+        },
+      });
+
+      // Highway fill (lighter, semi-transparent yellow)
       map.current.addLayer({
         id: 'major-highways-primary',
         type: 'line',
@@ -206,14 +225,14 @@ export default function StateMap({
         'source-layer': 'road',
         filter: ['all', ['in', 'class', 'motorway', 'trunk']],
         paint: {
-          'line-color': '#FFD84D', // Bright yellow for major arteries
+          'line-color': '#FFF176', // Lighter yellow for fill
           'line-width': [
             'interpolate', ['linear'], ['zoom'],
-            5, 2.5,    // Thin at low zoom
-            10, 4,     // Medium at mid zoom  
-            14, 7      // Thick at high zoom
+            5, 1.8,    // Thinner at low zoom
+            10, 2.6,   // Medium at mid zoom  
+            14, 4.2    // Thinner at high zoom
           ],
-          'line-opacity': 0.95,
+          'line-opacity': 0.7, // More transparent
         },
       });
 
@@ -226,14 +245,14 @@ export default function StateMap({
         minzoom: 10,
         filter: ['all', ['in', 'class', 'motorway', 'trunk']],
         paint: {
-          'line-color': '#FFD84D',
+          'line-color': '#E6C200',
           'line-width': [
             'interpolate', ['linear'], ['zoom'],
-            10, 5,     // Slightly wider than base
-            14, 8.5    // Maintains proportion
+            10, 3.8,   // Slightly wider than base
+            14, 6      // Maintains proportion
           ],
           'line-dasharray': [2, 2],
-          'line-opacity': 0.6,
+          'line-opacity': 0.5,
         },
       });
     }
@@ -264,10 +283,13 @@ export default function StateMap({
     }
 
     // Update filters when state or selection changes
-    if (map.current.getLayer('major-highways-primary')) {
+    if (map.current.getLayer('major-highways-primary-border')) {
       const baseFilter = ['in', 'class', 'motorway', 'trunk'];
-      map.current.setFilter('major-highways-primary', showAllStates ? baseFilter : ['all', baseFilter]);
-      map.current.setFilter('major-highways-primary-outline', showAllStates ? baseFilter : ['all', baseFilter]);
+      const stateFilteredFilter = showAllStates ? baseFilter : ['all', baseFilter, stateFilter];
+      
+      map.current.setFilter('major-highways-primary-border', stateFilteredFilter);
+      map.current.setFilter('major-highways-primary', stateFilteredFilter);
+      map.current.setFilter('major-highways-primary-outline', stateFilteredFilter);
     }
 
     // Update selected highway filter
@@ -280,7 +302,7 @@ export default function StateMap({
     }
 
     // Interactive cursors and click handlers
-    const highwayLayers = ['major-highways-primary'];
+    const highwayLayers = ['major-highways-primary-border', 'major-highways-primary'];
     
     highwayLayers.forEach(layerId => {
       // Remove existing handlers - no need to remove, just add new ones
@@ -324,8 +346,10 @@ export default function StateMap({
     if (!selectedHighway) return;
 
     // Filter data by selected state and highway proximity
+    const isFullView = selectedState.code === 'FULL';
+    
     const stateCameras = mockData.cameras.filter(cam => 
-      cam.state === selectedState.code && 
+      (isFullView || cam.state === selectedState.code) && 
       (cam.road.includes(selectedHighway) || isNearHighway(cam.coords, selectedHighway))
     );
     

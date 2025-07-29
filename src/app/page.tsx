@@ -10,8 +10,8 @@ export default function HomePage() {
 
   // Redirect to state-scoped route
   useEffect(() => {
-    router.replace(`/${selectedState.code}/map`);
-  }, [router, selectedState.code]);
+    router.replace(`/FULL/map`);
+  }, [router]);
 
   return (
     <div className="flex items-center justify-center h-screen bg-background">

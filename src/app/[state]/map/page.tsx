@@ -97,7 +97,7 @@ export default function StateMapPage() {
       setSelectedState(stateInfo);
     } else if (!stateInfo) {
       // Invalid state code, redirect to default
-      router.replace('/MI/map');
+      router.replace('/FULL/map');
     }
   }, [stateCode, selectedState.code, setSelectedState, router]);
 
@@ -189,7 +189,10 @@ export default function StateMapPage() {
 
   // Calculate nearest cameras for alert
   const findNearestCameras = (alertCoords: [number, number], count: number = 2): Camera[] => {
-    const stateCameras = mockData.cameras.filter(cam => cam.state === selectedState.code);
+    const isFullView = selectedState.code === 'FULL';
+    const stateCameras = mockData.cameras.filter(cam => 
+      isFullView || cam.state === selectedState.code
+    );
     
     const camerasWithDistance = stateCameras.map(camera => {
       const distance = Math.sqrt(
