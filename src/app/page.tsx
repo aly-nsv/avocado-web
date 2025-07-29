@@ -78,7 +78,7 @@ export default function HomePage() {
             <div className="h-8 w-8 bg-gradient-to-r from-primary to-highlight rounded-lg flex items-center justify-center">
               <MapIcon className="h-5 w-5 text-white" />
             </div>
-            <h1 className="text-xl font-bold text-neutral-900">AVocado Dashboard</h1>
+            <h1 className="text-xl font-bold text-blue-highlight">AVocado Mobility</h1>
           </div>
           <div className="flex space-x-6">
             <Link href="/" className="text-primary font-medium flex items-center space-x-1">

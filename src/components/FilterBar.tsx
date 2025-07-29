@@ -15,6 +15,7 @@ import {
 } from '@heroicons/react/24/solid';
 import { FilterBarProps, FilterType, StateInfo } from '@/types/dashboard';
 import { US_STATES } from '@/data/states';
+import { Button } from './ui/Button';
 
 // Define filter configuration with proper typing
 const FILTER_CONFIG: Record<FilterType, { 
@@ -121,13 +122,14 @@ export default function FilterBar({
         </div>
 
         {/* Right Side: Alerts Panel Toggle */}
-        <button
+        <Button
+          variant="secondary"
+          size="sm"
           onClick={onToggleAlerts}
-          className="inline-flex items-center px-4 py-2 rounded-md text-sm font-medium text-neutral-700 bg-background border border-neutral-300 hover:bg-neutral-50 transition-colors"
+          leftIcon={<BellIcon className="h-4 w-4" />}
         >
-          <BellIcon className="h-4 w-4 mr-2" />
           Alerts
-        </button>
+        </Button>
       </div>
     </div>
   );

@@ -25,12 +25,12 @@ const config: Config = {
           100: '#B2CBE0',     // Pale blue highlight
           200: '#9BB4CC',     // Light steel blue  
           300: '#6C909C',     // Dusty teal-gray
-          400: '#58738C',     // Desaturated blue-gray
-          500: '#4D5661',     // Medium slate gray
-          600: '#354A5A',     // Muted steel blue
-          700: '#2B3744',     // Charcoal slate
-          800: '#171E25',     // Deep navy
-          900: '#171E25',     // Deep navy
+          400: '#6A87A2',     // Desaturated blue-gray (lighter)
+          500: '#A3B2C2',     // Medium slate gray (brighter/lighter)
+          600: '#9AA6B2',     // Muted gray, less blue (brighter/lighter)
+          700: '#3A495A',     // Charcoal slate (lighter)
+          800: '#232C36',     // Deep navy (lighter)
+          900: '#F8FAFB',     // Light gray (was white, slightly lighter)
         },
 
         // Primary color system using the refined palette
@@ -63,6 +63,9 @@ const config: Config = {
           DEFAULT: '#394859', // Jolt of blue
           soft: '#B2CBE0',    // Pale blue highlight
         },
+
+        // Custom blue highlight
+        'blue-highlight': '#60afe9',
 
         // Gradient colors using new palette
         gradientStart: '#171E25',  // Deep navy
