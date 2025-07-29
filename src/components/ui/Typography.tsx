@@ -79,12 +79,12 @@ const textVariants = cva(
 )
 
 export interface TextProps
-  extends React.HTMLAttributes<HTMLParagraphElement>,
+  extends React.HTMLAttributes<HTMLElement>,
     VariantProps<typeof textVariants> {
   as?: 'p' | 'span' | 'div' | 'label'
 }
 
-const Text = React.forwardRef<HTMLParagraphElement, TextProps>(
+const Text = React.forwardRef<any, TextProps>(
   ({ className, variant, weight, as = 'p', ...props }, ref) => {
     const Comp = as
     return (
@@ -99,7 +99,7 @@ const Text = React.forwardRef<HTMLParagraphElement, TextProps>(
 Text.displayName = 'Text'
 
 const linkVariants = cva(
-  'transition-colors underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/50 focus-visible:ring-offset-2 rounded-sm',
+  'transition-colors underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-400/50 focus-visible:ring-offset-2 rounded-sm',
   {
     variants: {
       variant: {

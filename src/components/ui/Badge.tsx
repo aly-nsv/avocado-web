@@ -6,13 +6,13 @@ import { cn } from '@/lib/utils'
 import { X } from 'lucide-react'
 
 const badgeVariants = cva(
-  'inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500/50 focus:ring-offset-2',
+  'inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-primary-400/50 focus:ring-offset-2',
   {
     variants: {
       variant: {
-        default: 'border-transparent bg-primary-600 text-white hover:bg-primary-500',
+        default: 'border-transparent bg-primary-500 text-neutral-100 hover:bg-primary-400',
         secondary: 'border-transparent bg-surface text-neutral-200 hover:bg-surface-subtle',
-        outline: 'border-primary-500 text-primary-300 hover:bg-primary-500/10',
+        outline: 'border-primary-400 text-primary-300 hover:bg-primary-400/10',
         success: 'border-transparent bg-success text-white',
         warning: 'border-transparent bg-warning text-white',
         danger: 'border-transparent bg-danger text-white',

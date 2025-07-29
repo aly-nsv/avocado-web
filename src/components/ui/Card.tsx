@@ -13,7 +13,7 @@ const cardVariants = cva(
         elevated: 'bg-surface border-neutral-700 shadow-elevated',
         glow: 'bg-surface-glow border-neutral-700/50',
         gradient: 'bg-navy-gradient border-primary-600/30',
-        outline: 'bg-transparent border-primary-500 border-2',
+        outline: 'bg-transparent border-primary-400 border-2',
       },
       size: {
         sm: 'p-4',

@@ -11,65 +11,72 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // Greys and background
+        // New refined color palette
         background: {
-          DEFAULT: '#0B0C10', // near black
-          light: '#1C1F26',
-          deep: '#050507'
+          DEFAULT: '#171E25', // Deep navy background
+          light: '#2B3744',   // Charcoal slate
+          deep: '#171E25',    // Same as default for consistency
         },
         surface: {
-          DEFAULT: '#1A1D24', // for panels/cards
-          subtle: '#23272E',
+          DEFAULT: '#2B3744', // Charcoal slate for panels/cards
+          subtle: '#354A5A',  // Muted steel blue
         },
         neutral: {
-          100: '#E5E7EB',
-          200: '#D1D5DB',
-          300: '#9CA3AF',
-          400: '#6B7280',
-          500: '#4B5563',
-          600: '#374151',
-          700: '#1F2937',
-          800: '#111827',
-          900: '#0B0C10',
+          100: '#B2CBE0',     // Pale blue highlight
+          200: '#9BB4CC',     // Light steel blue  
+          300: '#6C909C',     // Dusty teal-gray
+          400: '#58738C',     // Desaturated blue-gray
+          500: '#4D5661',     // Medium slate gray
+          600: '#354A5A',     // Muted steel blue
+          700: '#2B3744',     // Charcoal slate
+          800: '#171E25',     // Deep navy
+          900: '#171E25',     // Deep navy
         },
 
-        // Primary blue gradient tones
+        // Primary color system using the refined palette
         primary: {
-          100: '#C7D7FF',
-          200: '#A6BDFD',
-          300: '#7F9FFB',
-          400: '#587FF8',
-          500: '#325FF6', // main blue for links/buttons
-          600: '#1E3A8A', // deep navy
-          700: '#162A63',
-          800: '#101A47',
-          900: '#0A102F',
+          100: '#B2CBE0',     // Pale blue highlight
+          200: '#9BB4CC',     // Light steel blue
+          300: '#6C909C',     // Dusty teal-gray
+          400: '#58738C',     // Desaturated blue-gray
+          500: '#4D5661',     // Medium slate gray - main color
+          600: '#354A5A',     // Muted steel blue
+          700: '#2B3744',     // Charcoal slate
+          800: '#171E25',     // Deep navy
+          900: '#171E25',     // Deep navy
         },
 
-        // Highlight blue (used sparingly)
+        // Bright accent colors
+        accent: {
+          DEFAULT: '#0F9960', // Bright teal/green accent
+          success: '#0F9960', // Same as accent
+          danger: '#A04E54',  // Muted crimson accent
+        },
+
+        // Status colors using the new palette
+        success: '#0F9960',   // Bright teal/green
+        danger: '#A04E54',    // Muted crimson
+        warning: '#58738C',   // Using desaturated blue-gray for warnings
+
+        // Highlight color
         highlight: {
-          DEFAULT: '#6EC1E4', // calm, friendly cyan-blue
-          soft: '#A1D7F1',
+          DEFAULT: '#9BB4CC', // Light steel blue
+          soft: '#B2CBE0',    // Pale blue highlight
         },
 
-        // Alerts and status
-        danger: '#DC2626',
-        success: '#10B981',
-        warning: '#F59E0B',
-
-        // Accent gradients
-        gradientStart: '#101A47',
-        gradientMid: '#1E3A8A',
-        gradientEnd: '#325FF6',
+        // Gradient colors using new palette
+        gradientStart: '#171E25',  // Deep navy
+        gradientMid: '#2B3744',    // Charcoal slate
+        gradientEnd: '#354A5A',    // Muted steel blue
       },
 
       backgroundImage: {
-        'navy-gradient': 'linear-gradient(to bottom right, #101A47, #1E3A8A, #325FF6)',
-        'surface-glow': 'radial-gradient(circle at 30% 30%, rgba(50,95,246,0.05), transparent 80%)',
+        'navy-gradient': 'linear-gradient(to bottom right, #171E25, #2B3744, #354A5A)',
+        'surface-glow': 'radial-gradient(circle at 30% 30%, rgba(77,86,97,0.1), transparent 80%)',
       },
 
       boxShadow: {
-        focus: '0 0 0 2px rgba(50, 95, 246, 0.5)', // subtle focus ring
+        focus: '0 0 0 2px rgba(77, 86, 97, 0.5)', // subtle focus ring using medium slate gray
         elevated: '0 4px 20px rgba(0,0,0,0.6)',
       },
 

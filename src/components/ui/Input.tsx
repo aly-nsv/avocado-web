@@ -6,11 +6,11 @@ import { cn } from '@/lib/utils'
 import { Eye, EyeOff, Search, AlertCircle } from 'lucide-react'
 
 const inputVariants = cva(
-  'flex w-full rounded-xl border bg-surface px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-neutral-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/50 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 transition-all',
+  'flex w-full rounded-xl border bg-surface px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-neutral-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-400/50 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 transition-all',
   {
     variants: {
       variant: {
-        default: 'border-neutral-600 text-neutral-100 focus-visible:border-primary-500',
+        default: 'border-neutral-600 text-neutral-100 focus-visible:border-primary-400',
         error: 'border-danger text-neutral-100 focus-visible:border-danger',
         success: 'border-success text-neutral-100 focus-visible:border-success',
       },
@@ -28,7 +28,7 @@ const inputVariants = cva(
 )
 
 export interface InputProps
-  extends React.InputHTMLAttributes<HTMLInputElement>,
+  extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'size'>,
     VariantProps<typeof inputVariants> {
   leftIcon?: React.ReactNode
   rightIcon?: React.ReactNode
