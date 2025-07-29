@@ -35,7 +35,7 @@ const config: Config = {
 
         // Primary color system using the refined palette
         primary: {
-          100: '#B2CBE0',     // Pale blue highlight
+          100: '#384553',     // Pale blue highlight
           200: '#9BB4CC',     // Light steel blue
           300: '#6C909C',     // Dusty teal-gray
           400: '#58738C',     // Desaturated blue-gray
@@ -60,7 +60,7 @@ const config: Config = {
 
         // Highlight color
         highlight: {
-          DEFAULT: '#9BB4CC', // Light steel blue
+          DEFAULT: '#394859', // Jolt of blue
           soft: '#B2CBE0',    // Pale blue highlight
         },
 
