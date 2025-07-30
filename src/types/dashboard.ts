@@ -62,6 +62,20 @@ export interface StateMapProps {
   alerts: Alert[];
 }
 
+export interface FloridaCamera {
+  id: string;
+  name: string;
+  lat: number;
+  lng: number;
+  region: string;
+  county: string;
+  roadway: string;
+  direction: string;
+  videoUrl: string;
+  thumbnailUrl: string;
+  status: 'active' | 'inactive' | 'maintenance' | 'offline';
+}
+
 export interface AlertsPanelProps {
   isOpen: boolean;
   alerts: Alert[];
