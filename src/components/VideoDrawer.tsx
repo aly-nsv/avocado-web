@@ -12,6 +12,8 @@ interface Camera {
   milepost: number;
   status: 'online' | 'offline';
   stream_url: string | null;
+  sourceId?: string | null;
+  systemSource?: string | null;
 }
 
 interface VideoDrawerProps {
@@ -19,29 +21,91 @@ interface VideoDrawerProps {
   onClose: () => void;
 }
 
-// HLS Video Player Component
-function HLSVideoPlayer({ src, playing, onToggle, cameraId }: { 
+// HLS Video Player Component with Authentication Support
+function HLSVideoPlayer({ src, playing, onToggle, cameraId, camera }: { 
   src: string; 
   playing: boolean; 
   onToggle: () => void; 
   cameraId: string;
+  camera?: Camera;
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const hlsRef = useRef<Hls | null>(null);
+  const [streamUrl, setStreamUrl] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
+  // Get authenticated stream URL
+  useEffect(() => {
+    const getAuthenticatedUrl = async () => {
+      setLoading(true);
+      setError(null);
+
+      try {
+        // Check if URL needs authentication (divas.cloud/dis-se domains)
+        const needsAuth = src.includes('divas.cloud') || src.includes('dis-se');
+        
+        if (!needsAuth) {
+          setStreamUrl(src);
+          setLoading(false);
+          return;
+        }
+
+        // Extract sourceId from camera metadata if available
+        const urlParams = new URLSearchParams();
+        urlParams.set('originalUrl', src);
+        
+        // Use sourceId from camera metadata, or extract from URL, or fallback to camera ID
+        const sourceId = camera?.sourceId || extractSourceId(src) || cameraId;
+        if (sourceId) {
+          urlParams.set('sourceId', sourceId);
+        }
+
+        const proxyResponse = await fetch(`/api/video-proxy/${cameraId}?${urlParams}`);
+        
+        if (!proxyResponse.ok) {
+          throw new Error(`Authentication failed: ${proxyResponse.status}`);
+        }
+
+        const proxyData = await proxyResponse.json();
+        
+        if (proxyData.secureUrl) {
+          setStreamUrl(proxyData.secureUrl);
+        } else {
+          throw new Error(proxyData.error || 'No secure URL returned');
+        }
+
+      } catch (err) {
+        console.error('Video authentication error:', err);
+        setError(err instanceof Error ? err.message : 'Authentication failed');
+        // Don't fallback to original URL since it will fail with CORS
+        setStreamUrl(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    getAuthenticatedUrl();
+  }, [src, cameraId]);
+
+  // Initialize HLS player when stream URL is available
   useEffect(() => {
     const video = videoRef.current;
-    if (!video) return;
+    if (!video || !streamUrl) return;
 
     if (Hls.isSupported()) {
       const hls = new Hls({
         enableWorker: true,
         lowLatencyMode: true,
         backBufferLength: 90,
+        xhrSetup: (xhr, url) => {
+          // Add custom headers for authenticated requests
+          xhr.setRequestHeader('Cache-Control', 'no-cache');
+        }
       });
       hlsRef.current = hls;
 
-      hls.loadSource(src);
+      hls.loadSource(streamUrl);
       hls.attachMedia(video);
 
       hls.on(Hls.Events.MANIFEST_PARSED, () => {
@@ -51,16 +115,21 @@ function HLSVideoPlayer({ src, playing, onToggle, cameraId }: {
       });
 
       hls.on(Hls.Events.ERROR, (event, data) => {
+        console.warn('HLS error:', data);
         if (data.fatal) {
           console.error('HLS fatal error:', data);
           switch (data.type) {
             case Hls.ErrorTypes.NETWORK_ERROR:
+              console.log('Network error, attempting reload...');
               hls.startLoad();
               break;
             case Hls.ErrorTypes.MEDIA_ERROR:
+              console.log('Media error, attempting recovery...');
               hls.recoverMediaError();
               break;
             default:
+              console.error('Unrecoverable HLS error, destroying player');
+              setError('Stream playback failed');
               hls.destroy();
               break;
           }
@@ -68,7 +137,7 @@ function HLSVideoPlayer({ src, playing, onToggle, cameraId }: {
       });
     } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
       // Safari native HLS support
-      video.src = src;
+      video.src = streamUrl;
       if (playing) {
         video.play().catch(console.error);
       }
@@ -80,8 +149,9 @@ function HLSVideoPlayer({ src, playing, onToggle, cameraId }: {
         hlsRef.current = null;
       }
     };
-  }, [src]);
+  }, [streamUrl]);
 
+  // Control playback
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
@@ -92,6 +162,45 @@ function HLSVideoPlayer({ src, playing, onToggle, cameraId }: {
       video.pause();
     }
   }, [playing]);
+
+  // Helper function to extract sourceId from URL
+  function extractSourceId(url: string): string | null {
+    // Try to extract channel ID from URL like "chan-9213_h"
+    const channelMatch = url.match(/chan-(\d+)_/);
+    if (channelMatch) {
+      return channelMatch[1];
+    }
+    return null;
+  }
+
+  if (loading) {
+    return (
+      <div className="w-full h-full bg-neutral-800 flex items-center justify-center">
+        <div className="text-center text-neutral-400">
+          <div className="animate-spin w-8 h-8 border-2 border-neutral-600 border-t-white rounded-full mx-auto mb-2"></div>
+          <div className="text-sm">Authenticating stream...</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="w-full h-full bg-neutral-800 flex items-center justify-center">
+        <div className="text-center text-neutral-400 p-4">
+          <div className="text-red-400 text-lg mb-2">⚠️</div>
+          <div className="text-sm mb-2">Stream Unavailable</div>
+          <div className="text-xs text-neutral-500">{error}</div>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="mt-2 px-3 py-1 bg-neutral-700 hover:bg-neutral-600 rounded text-xs"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -197,6 +306,7 @@ export default function VideoDrawer({ cameras, onClose }: VideoDrawerProps) {
                         playing={playingVideos.has(camera.id)}
                         onToggle={() => toggleVideo(camera.id)}
                         cameraId={camera.id}
+                        camera={camera}
                       />
                     ) : (
                       // Regular MP4 Video

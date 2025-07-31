@@ -34,6 +34,8 @@ interface TransformedCamera {
   videoUrl: string
   thumbnailUrl: string
   status: 'active' | 'inactive' | 'maintenance' | 'offline'
+  sourceId: string | null
+  systemSource: string | null
 }
 
 export async function GET(
@@ -91,7 +93,9 @@ export async function GET(
       direction: camera.direction,
       videoUrl: camera.video_url,
       thumbnailUrl: camera.thumbnail_url,
-      status: 'active'
+      status: 'active',
+      sourceId: camera.raw_data?.sourceId || null,
+      systemSource: camera.raw_data?.source || null
     }))
 
     return NextResponse.json({

@@ -74,6 +74,8 @@ export interface FloridaCamera {
   videoUrl: string;
   thumbnailUrl: string;
   status: 'active' | 'inactive' | 'maintenance' | 'offline';
+  sourceId?: string | null;
+  systemSource?: string | null;
 }
 
 export interface AlertsPanelProps {

@@ -20,6 +20,8 @@ interface Camera {
   status: 'online' | 'offline';
   stream_url: string | null;
   priority: 'high' | 'medium' | 'low';
+  sourceId?: string | null;
+  systemSource?: string | null;
 }
 
 interface MapAlert {
@@ -149,7 +151,9 @@ export default function StateMap({
         if (response.ok) {
           const data = await response.json();
           setFloridaCameras(data.cameras || []);
-          console.log(`Loaded ${data.cameras?.length || 0} Florida cameras`);
+          console.log(`✅ Loaded ${data.cameras?.length || 0} Florida cameras from API`);
+          console.log('🎯 Sample camera data:', data.cameras?.[0]);
+          console.log('📍 Markers should now be visible on the map without selecting a highway');
         } else {
           console.error('Failed to fetch Florida cameras:', response.statusText);
           setFloridaCameras([]);
@@ -162,6 +166,34 @@ export default function StateMap({
 
     loadFloridaCameras();
   }, [selectedState.code]);
+
+  // Add global debug helper for testing marker visibility
+  useEffect(() => {
+    (window as any).debugMarkers = () => {
+      const markers = document.querySelectorAll('.pin-marker');
+      console.log(`🔍 Total markers on map: ${markers.length}`);
+      const floridaCameraMarkers = document.querySelectorAll('.florida-camera-marker');
+      console.log(`📹 Florida camera markers: ${floridaCameraMarkers.length}`);
+      console.log('📊 Florida cameras data loaded:', floridaCameras.length);
+      
+      if (floridaCameraMarkers.length === 0 && floridaCameras.length > 0) {
+        console.log('❌ Issue: Camera data loaded but no markers visible');
+      } else if (floridaCameraMarkers.length > 0) {
+        console.log('✅ Markers are visible on the map!');
+        console.log('🎯 Click on a green 📹 marker to test interaction');
+      }
+      
+      return {
+        totalMarkers: markers.length,
+        floridaMarkers: floridaCameraMarkers.length,
+        cameraData: floridaCameras.length
+      };
+    };
+    
+    return () => {
+      delete (window as any).debugMarkers;
+    };
+  }, [floridaCameras]);
 
   // Initialize MapBox map on component mount
   useEffect(() => {
@@ -363,14 +395,91 @@ export default function StateMap({
 
   }, [mapLoaded, selectedState, showAllStates, selectedHighway]);
 
-  // Add all pins when highway is selected
+  // Add all pins when highway is selected OR when showing Florida cameras
   useEffect(() => {
-    if (!map.current || !mapLoaded || !map.current.isStyleLoaded() || !selectedHighway) return;
+    if (!map.current || !mapLoaded) return;
 
     // Remove all existing markers when highway changes
-    const existingMarkers = document.querySelectorAll('.pin-marker');
-    existingMarkers.forEach(marker => marker.remove());
+    // const existingMarkers = document.querySelectorAll('.pin-marker');
+    // existingMarkers.forEach(marker => marker.remove());
 
+    // Always render Florida cameras when Florida is selected
+    console.log('======== Selected state:', selectedState.code, floridaCameras.length);
+    if (selectedState.code === 'FL' && floridaCameras.length > 0) {
+      console.log('🎯 Placing Florida cameras:', floridaCameras.length);
+
+      floridaCameras.forEach(camera => {
+        const markerEl = document.createElement('div');
+        markerEl.className = 'pin-marker florida-camera-marker';
+        markerEl.style.cursor = 'pointer';
+        markerEl.style.borderRadius = '4px';
+        markerEl.style.display = 'flex';
+        markerEl.style.alignItems = 'center';
+        markerEl.style.justifyContent = 'center';
+        markerEl.style.fontSize = '12px';
+        markerEl.style.border = '2px solid white';
+        markerEl.style.width = '32px';
+        markerEl.style.height = '32px';
+        markerEl.style.backgroundColor = '#ffffff'; // White background
+        markerEl.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.3), 0 2px 4px rgba(0, 0, 0, 0.2)'; // Drop shadow for contrast
+        markerEl.style.opacity = '1';
+        
+        // Add Heroicons camera SVG icon (outline version)
+        markerEl.innerHTML = `
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M6.827 6.175A2.31 2.31 0 0 1 5.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 0 0-1.134-.175 2.31 2.31 0 0 1-1.64-1.055l-.822-1.316a2.192 2.192 0 0 0-1.736-1.039 48.774 48.774 0 0 0-5.232 0 2.192 2.192 0 0 0-1.736 1.039l-.821 1.316Z" stroke="#374151" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M16.5 12.75a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0ZM18.75 10.5h.008v.008h-.008V10.5Z" stroke="#374151" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        `;
+
+        // Click handler for Florida cameras
+        markerEl.addEventListener('click', () => {
+          console.log('🎥 Florida camera clicked:', camera.name, `(${camera.roadway})`);
+          // Transform to expected Camera format for onCameraClick
+          const transformedCamera: Camera = {
+            id: camera.id,
+            state: 'FL',
+            coords: [camera.lng, camera.lat],
+            road: camera.roadway || 'Unknown',
+            road_class: 'motorway',
+            functional_class: 1,
+            milepost: 0,
+            status: 'online',
+            stream_url: camera.videoUrl,
+            priority: 'high',
+            // Add source metadata for authentication
+            sourceId: camera.sourceId,
+            systemSource: camera.systemSource
+          };
+          onCameraClick?.(transformedCamera);
+        });
+
+        // Create popup for Florida cameras
+        const popup = new mapboxgl.Popup({ offset: 25 }).setHTML(`
+          <div class="p-2">
+            <div class="font-semibold text-sm">${camera.name}</div>
+            <div class="text-xs text-gray-600 mt-1">
+              <span class="font-medium">Road:</span> ${camera.roadway}
+              <span class="ml-2 font-medium">Direction:</span> ${camera.direction}
+            </div>
+            <div class="text-xs text-gray-500 mt-1">
+              <span class="font-medium">Region:</span> ${camera.region}
+              <span class="ml-2 font-medium">County:</span> ${camera.county}
+            </div>
+            <div class="text-xs text-blue-600 mt-2 cursor-pointer hover:underline">
+              Click to view live stream
+            </div>
+          </div>
+        `);
+
+        new mapboxgl.Marker(markerEl)
+          .setLngLat([camera.lng, camera.lat])
+          .setPopup(popup)
+          .addTo(map.current!);
+      });
+    }
+
+    // Return early if no highway is selected (for other marker types)
     if (!selectedHighway) return;
 
     // Filter data by selected state and highway proximity
@@ -407,69 +516,7 @@ export default function StateMap({
       return true; // For now, show all pins when highway is selected
     }
 
-    // Render camera pins
-
-    // Render Florida 511 cameras for Florida state
-    if (selectedState.code === 'FL' && floridaCameras.length > 0) {
-      floridaCameras.forEach(camera => {
-        const markerEl = document.createElement('div');
-        markerEl.className = 'pin-marker florida-camera-marker';
-        markerEl.style.cursor = 'pointer';
-        markerEl.style.borderRadius = '4px';
-        markerEl.style.display = 'flex';
-        markerEl.style.alignItems = 'center';
-        markerEl.style.justifyContent = 'center';
-        markerEl.style.fontSize = '12px';
-        markerEl.style.border = '2px solid white';
-        markerEl.style.width = '24px';
-        markerEl.style.height = '24px';
-        markerEl.style.backgroundColor = '#059669'; // Green for live cameras
-        markerEl.innerHTML = '📹';
-        markerEl.style.opacity = '1';
-
-        // Click handler for Florida cameras
-        markerEl.addEventListener('click', () => {
-          console.log('Florida camera clicked:', camera);
-          // Transform to expected Camera format for onCameraClick
-          const transformedCamera: Camera = {
-            id: camera.id,
-            state: 'FL',
-            coords: [camera.lng, camera.lat],
-            road: camera.roadway || 'Unknown',
-            road_class: 'motorway',
-            functional_class: 1,
-            milepost: 0,
-            status: 'online',
-            stream_url: camera.videoUrl,
-            priority: 'high'
-          };
-          onCameraClick?.(transformedCamera);
-        });
-
-        // Create popup for Florida cameras
-        const popup = new mapboxgl.Popup({ offset: 25 }).setHTML(`
-          <div class="p-2">
-            <div class="font-semibold text-sm">${camera.name}</div>
-            <div class="text-xs text-gray-600 mt-1">
-              <span class="font-medium">Road:</span> ${camera.roadway}
-              <span class="ml-2 font-medium">Direction:</span> ${camera.direction}
-            </div>
-            <div class="text-xs text-gray-500 mt-1">
-              <span class="font-medium">Region:</span> ${camera.region}
-              <span class="ml-2 font-medium">County:</span> ${camera.county}
-            </div>
-            <div class="text-xs text-blue-600 mt-2 cursor-pointer hover:underline">
-              Click to view live stream
-            </div>
-          </div>
-        `);
-
-        new mapboxgl.Marker(markerEl)
-          .setLngLat([camera.lng, camera.lat])
-          .setPopup(popup)
-          .addTo(map.current!);
-      });
-    }
+    // Render mock camera pins when highway is selected
 
     // Render camera pins
     stateCameras.forEach(camera => {
