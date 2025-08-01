@@ -42,10 +42,21 @@ function HLSVideoPlayer({ src, playing, onToggle, cameraId, camera }: {
       setError(null);
 
       try {
+        // Assert and log video URL before proceeding
+        console.log('🎥 VideoDrawer - Starting authentication for camera:', cameraId);
+        console.log('📹 VideoDrawer - Original video URL (src):', src);
+        console.log('📊 VideoDrawer - Camera metadata:', camera);
+        
+        if (!src || src === 'undefined' || src === 'null') {
+          throw new Error(`Invalid video URL provided: ${src}`);
+        }
+
         // Check if URL needs authentication (divas.cloud/dis-se domains)
         const needsAuth = src.includes('divas.cloud') || src.includes('dis-se');
+        console.log('🔒 VideoDrawer - Needs authentication:', needsAuth);
         
         if (!needsAuth) {
+          console.log('✅ VideoDrawer - No auth needed, using direct URL');
           setStreamUrl(src);
           setLoading(false);
           return;
@@ -60,6 +71,12 @@ function HLSVideoPlayer({ src, playing, onToggle, cameraId, camera }: {
         if (sourceId) {
           urlParams.set('sourceId', sourceId);
         }
+        
+        console.log('🔗 VideoDrawer - URL Params being sent:', {
+          originalUrl: src,
+          sourceId: sourceId,
+          cameraId: cameraId
+        });
 
         const proxyResponse = await fetch(`/api/video-proxy/${cameraId}?${urlParams}`);
         
@@ -70,6 +87,12 @@ function HLSVideoPlayer({ src, playing, onToggle, cameraId, camera }: {
         const proxyData = await proxyResponse.json();
         
         if (proxyData.secureUrl) {
+          console.log('Enhanced FL511 authentication successful:', {
+            cameraId: proxyData.cameraId,
+            totalSegments: proxyData.metadata?.totalSegments,
+            authenticatedAt: proxyData.metadata?.authenticatedAt,
+            alternativeEndpoints: proxyData.alternativeEndpoints
+          });
           setStreamUrl(proxyData.secureUrl);
         } else {
           throw new Error(proxyData.error || 'No secure URL returned');

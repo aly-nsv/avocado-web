@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getFloridaCameraVideoUrl, needsAuthentication } from '@/lib/florida511-auth'
+import { getFloridaCameraStreamInfo, needsAuthentication } from '@/lib/florida511-auth'
 
 interface CameraVideoRequest {
   cameraId: string
@@ -7,6 +7,11 @@ interface CameraVideoRequest {
   originalUrl?: string
 }
 
+/**
+ * Enhanced Video Proxy Endpoint
+ * 
+ * Returns comprehensive stream information using the improved authentication flow
+ */
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ cameraId: string }> }
@@ -14,7 +19,6 @@ export async function GET(
   try {
     const { cameraId } = await params
     const { searchParams } = new URL(request.url)
-    const sourceId = searchParams.get('sourceId')
     const originalUrl = searchParams.get('originalUrl')
 
     // Validate required parameters
@@ -30,28 +34,54 @@ export async function GET(
       return NextResponse.redirect(originalUrl)
     }
 
-    // For Florida 511 cameras that need authentication
-    const secureUrl = await getFloridaCameraVideoUrl(cameraId, sourceId || '')
+    console.log(`🎬 Video Proxy: Processing camera ${cameraId}`)
+    console.log(`📹 Video Proxy: Original URL parameter:`, originalUrl)
 
-    if (!secureUrl) {
+    // Use the originalUrl parameter passed from the client
+    if (!originalUrl) {
       return NextResponse.json({
-        error: 'Unable to retrieve authenticated video URL',
+        error: 'Original URL is required for authentication',
+        cameraId
+      }, { status: 400 })
+    }
+
+    console.log(`✅ Video Proxy: Using provided video URL: ${originalUrl}`)
+
+    // For Florida 511 cameras that need authentication, use enhanced flow
+    const streamInfo = await getFloridaCameraStreamInfo(cameraId, originalUrl)
+
+    if (!streamInfo) {
+      return NextResponse.json({
+        error: 'Unable to retrieve authenticated video stream',
         cameraId,
-        message: 'Camera may be offline or authentication failed'
+        message: 'Camera may be offline, authentication failed, or no valid streaming servers found'
       }, { status: 404 })
     }
 
-    // Return the secure URL in JSON format for client-side handling
+    // Return comprehensive stream information for client-side handling
     return NextResponse.json({
-      cameraId,
-      secureUrl,
+      cameraId: streamInfo.camera_id,
+      secureUrl: streamInfo.streaming_url,
       originalUrl,
       authenticated: true,
-      expiresIn: 1800 // 30 minutes typical for streaming tokens
+      expiresIn: 1800, // 30 minutes typical for streaming tokens
+      metadata: {
+        totalSegments: streamInfo.segments.length,
+        sourceId: streamInfo.step1_video_info.sourceId,
+        systemSourceId: streamInfo.step1_video_info.systemSourceId,
+        baseUrl: streamInfo.step3_playlist_info.base_url,
+        authenticatedAt: new Date().toISOString()
+      },
+      alternativeEndpoints: {
+        streamProxy: `/api/stream-proxy/${cameraId}`,
+        playlist: `/api/fl511-playlist/${cameraId}`,
+        playlistWithProxy: `/api/fl511-playlist/${cameraId}?proxy=true`,
+        authInfo: `/api/fl511-auth/${cameraId}`
+      }
     })
 
   } catch (error) {
-    console.error('Video proxy error:', error)
+    console.error('Enhanced video proxy error:', error)
     return NextResponse.json({
       error: 'Video proxy service unavailable',
       details: error instanceof Error ? error.message : 'Unknown error'
