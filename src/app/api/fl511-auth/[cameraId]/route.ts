@@ -44,7 +44,7 @@ export async function GET(
     }
 
     // Execute the complete 4-step authentication flow
-    const streamInfo: StreamInfo | null = await getFloridaCameraStreamInfo(cameraId, cameraVideoUrl)
+    const streamInfo: StreamInfo | null = await getFloridaCameraStreamInfo(cameraId, cameraVideoUrl || '')
 
     if (!streamInfo) {
       return NextResponse.json({

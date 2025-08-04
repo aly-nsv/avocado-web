@@ -93,7 +93,12 @@ function HLSVideoPlayer({ src, playing, onToggle, cameraId, camera }: {
             authenticatedAt: proxyData.metadata?.authenticatedAt,
             alternativeEndpoints: proxyData.alternativeEndpoints
           });
-          setStreamUrl(proxyData.secureUrl);
+          
+          // Use the CORS-enabled playlist proxy with segment proxying
+          // This prevents CORS errors when HLS.js tries to access the stream and segments
+          const proxyPlaylistUrl = `/api/fl511-playlist/${cameraId}?proxy=true&originalUrl=${encodeURIComponent(src)}`;
+          console.log('🔄 VideoDrawer - Using CORS-enabled playlist proxy URL:', proxyPlaylistUrl);
+          setStreamUrl(proxyPlaylistUrl);
         } else {
           throw new Error(proxyData.error || 'No secure URL returned');
         }
@@ -120,10 +125,21 @@ function HLSVideoPlayer({ src, playing, onToggle, cameraId, camera }: {
       const hls = new Hls({
         enableWorker: true,
         lowLatencyMode: true,
-        backBufferLength: 90,
+        backBufferLength: 30, // Reduce buffer for live streams
+        maxBufferLength: 30, // Keep buffer small for live content
+        maxMaxBufferLength: 60,
+        liveSyncDurationCount: 3, // How many segments to buffer for live
+        liveMaxLatencyDurationCount: 10,
+        manifestLoadingTimeOut: 10000,
+        manifestLoadingMaxRetry: 3,
+        levelLoadingTimeOut: 10000,
+        levelLoadingMaxRetry: 3,
+        fragLoadingTimeOut: 20000,
+        fragLoadingMaxRetry: 6, // Increase retries for segments
         xhrSetup: (xhr, url) => {
           // Add custom headers for authenticated requests
           xhr.setRequestHeader('Cache-Control', 'no-cache');
+          xhr.setRequestHeader('Pragma', 'no-cache');
         }
       });
       hlsRef.current = hls;
@@ -132,15 +148,36 @@ function HLSVideoPlayer({ src, playing, onToggle, cameraId, camera }: {
       hls.attachMedia(video);
 
       hls.on(Hls.Events.MANIFEST_PARSED, () => {
+        console.log('✅ HLS: Manifest parsed successfully');
         if (playing) {
           video.play().catch(console.error);
         }
       });
 
+      hls.on(Hls.Events.LEVEL_LOADED, (event, data) => {
+        console.log('📺 HLS: Level loaded', { live: data.details.live, segments: data.details.fragments.length });
+      });
+
+      hls.on(Hls.Events.FRAG_LOADED, (event, data) => {
+        console.log('🎬 HLS: Fragment loaded successfully', { url: data.frag.url });
+      });
+
+      hls.on(Hls.Events.FRAG_LOAD_EMERGENCY_ABORTED, (event, data) => {
+        console.warn('⚠️ HLS: Fragment load emergency aborted', data);
+      });
+
       hls.on(Hls.Events.ERROR, (event, data) => {
-        console.warn('HLS error:', data);
+        console.warn('HLS error details:', {
+          type: data.type,
+          fatal: data.fatal,
+          details: data.details,
+          response: data.response,
+          url: data.url,
+          error: data.error,
+          networkDetails: data.networkDetails
+        });
         if (data.fatal) {
-          console.error('HLS fatal error:', data);
+          console.error('HLS fatal error - full data:', data);
           switch (data.type) {
             case Hls.ErrorTypes.NETWORK_ERROR:
               console.log('Network error, attempting reload...');
@@ -152,7 +189,7 @@ function HLSVideoPlayer({ src, playing, onToggle, cameraId, camera }: {
               break;
             default:
               console.error('Unrecoverable HLS error, destroying player');
-              setError('Stream playback failed');
+              setError(`Stream playback failed: ${data.details || 'Unknown error'}`);
               hls.destroy();
               break;
           }

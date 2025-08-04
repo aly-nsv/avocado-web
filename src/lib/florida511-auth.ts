@@ -308,7 +308,7 @@ class Florida511AuthService {
     console.log('='.repeat(60));
     
     // Validate videoUrl parameter
-    if (!indexVideoUrl || indexVideoUrl === 'undefined' || indexVideoUrl === 'null') {
+    if (!indexVideoUrl || indexVideoUrl === 'undefined' || indexVideoUrl === 'null' || indexVideoUrl.trim() === '') {
       console.error(`❌ Auth Service - Invalid video URL provided: ${indexVideoUrl}`);
       return null;
     }

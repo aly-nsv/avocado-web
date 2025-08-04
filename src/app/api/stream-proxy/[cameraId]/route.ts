@@ -13,28 +13,18 @@ export async function GET(
 ) {
   try {
     const { cameraId } = await params
+    const { searchParams } = new URL(request.url)
+    const originalUrl = searchParams.get('originalUrl')
 
     console.log(`Stream Proxy: Processing camera ${cameraId}`)
+    console.log(`Stream Proxy: Original URL from query:`, originalUrl)
 
-    // Get camera data to obtain the stored video URL
-    let cameraVideoUrl: string | undefined;
-    try {
-      // Try to get camera data from the v2 API to get the stored video URL
-      const cameraResponse = await fetch(`${request.nextUrl.origin}/api/cameras/v2/fl?limit=1000`);
-      if (cameraResponse.ok) {
-        const cameraData = await cameraResponse.json();
-        const camera = cameraData.cameras?.find((cam: any) => cam.id === cameraId);
-        if (camera?.videoUrl) {
-          cameraVideoUrl = camera.videoUrl;
-          console.log(`Found stored video URL for camera ${cameraId}: ${cameraVideoUrl}`);
-        }
-      }
-    } catch (error) {
-      console.warn('Could not fetch camera data for video URL:', error);
+    if (!originalUrl) {
+      return new NextResponse('Original URL parameter is required', { status: 400 })
     }
 
     // Get complete stream information using enhanced authentication
-    const streamInfo = await getFloridaCameraStreamInfo(cameraId, cameraVideoUrl)
+    const streamInfo = await getFloridaCameraStreamInfo(cameraId, originalUrl)
 
     if (!streamInfo) {
       return new NextResponse('Stream not available - authentication failed', { status: 404 })

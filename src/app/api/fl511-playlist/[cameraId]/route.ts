@@ -15,6 +15,7 @@ export async function GET(
     const { cameraId } = await params
     const { searchParams } = new URL(request.url)
     const proxySegments = searchParams.get('proxy') === 'true'
+    const originalUrl = searchParams.get('originalUrl')
 
     // Validate required parameters
     if (!cameraId) {
@@ -24,52 +25,113 @@ export async function GET(
     }
 
     console.log(`FL511 Playlist API: Processing camera ${cameraId}`)
+    console.log(`FL511 Playlist API: Original URL from query:`, originalUrl)
+    console.log(`FL511 Playlist API: Proxy segments requested:`, proxySegments)
 
-    // Get camera data to obtain the stored video URL
-    let cameraVideoUrl: string | undefined;
-    try {
-      // Try to get camera data from the v2 API to get the stored video URL
-      const cameraResponse = await fetch(`${request.nextUrl.origin}/api/cameras/v2/fl?limit=1000`);
-      if (cameraResponse.ok) {
-        const cameraData = await cameraResponse.json();
-        const camera = cameraData.cameras?.find((cam: any) => cam.id === cameraId);
-        if (camera?.videoUrl) {
-          cameraVideoUrl = camera.videoUrl;
-          console.log(`Found stored video URL for camera ${cameraId}: ${cameraVideoUrl}`);
+    // Use originalUrl if provided, otherwise try to get stored video URL
+    let videoUrl = originalUrl;
+    
+    if (!videoUrl) {
+      try {
+        // Try to get camera data from the v2 API to get the stored video URL
+        const cameraResponse = await fetch(`${request.nextUrl.origin}/api/cameras/v2/fl?limit=1000`);
+        if (cameraResponse.ok) {
+          const cameraData = await cameraResponse.json();
+          const camera = cameraData.cameras?.find((cam: any) => cam.id === cameraId);
+          if (camera?.videoUrl) {
+            videoUrl = camera.videoUrl;
+            console.log(`Found stored video URL for camera ${cameraId}: ${videoUrl}`);
+          }
         }
+      } catch (error) {
+        console.warn('Could not fetch camera data for video URL:', error);
       }
-    } catch (error) {
-      console.warn('Could not fetch camera data for video URL:', error);
+    }
+
+    if (!videoUrl) {
+      return new NextResponse('Video URL not found - provide originalUrl parameter or ensure camera data exists', { status: 400 })
     }
 
     // Get complete stream information
-    const streamInfo: StreamInfo | null = await getFloridaCameraStreamInfo(cameraId, cameraVideoUrl)
+    const streamInfo: StreamInfo | null = await getFloridaCameraStreamInfo(cameraId, videoUrl)
 
     if (!streamInfo) {
       return new NextResponse('Playlist not available', { status: 404 })
     }
 
-    // Build an enhanced HLS playlist
+    // Build a clean HLS playlist by parsing the original and reconstructing it properly
     let playlistContent = streamInfo.step3_playlist_info.playlist_content
-
-    // If proxy is requested, replace segment URLs with our proxy endpoints
-    if (proxySegments) {
-      const baseUrl = new URL(request.url).origin
-      
-      for (const segment of streamInfo.segments) {
-        const originalUrl = segment.url
-        const proxyUrl = `${baseUrl}/api/fl511-segment?url=${encodeURIComponent(originalUrl)}`
-        playlistContent = playlistContent.replace(originalUrl, proxyUrl)
+    const lines = playlistContent.trim().split('\n')
+    
+    // Extract important metadata from original playlist
+    let targetDuration = 10
+    let mediaSequence = 0
+    let playlistType = 'LIVE'
+    let version = 3
+    
+    // Parse original playlist for metadata
+    for (const line of lines) {
+      if (line.startsWith('#EXT-X-TARGETDURATION:')) {
+        targetDuration = parseInt(line.split(':')[1]) || 10
+      } else if (line.startsWith('#EXT-X-MEDIA-SEQUENCE:')) {
+        mediaSequence = parseInt(line.split(':')[1]) || 0
+      } else if (line.startsWith('#EXT-X-PLAYLIST-TYPE:')) {
+        playlistType = line.split(':')[1] || 'LIVE'
+      } else if (line.startsWith('#EXT-X-VERSION:')) {
+        version = parseInt(line.split(':')[1]) || 3
       }
     }
 
-    // Add custom headers for better client compatibility
+    // Build clean playlist content
+    const segmentLines = []
+    let currentExtinf = null
+    let currentProgramDateTime = null
+    
+    for (const line of lines) {
+      const trimmedLine = line.trim()
+      
+      if (trimmedLine.startsWith('#EXTINF:')) {
+        currentExtinf = trimmedLine
+      } else if (trimmedLine.startsWith('#EXT-X-PROGRAM-DATE-TIME:')) {
+        currentProgramDateTime = trimmedLine
+      } else if (trimmedLine.endsWith('.ts') || (trimmedLine.includes('.ts?token='))) {
+        // This is a segment line
+        if (currentProgramDateTime) {
+          segmentLines.push(currentProgramDateTime)
+        }
+        if (currentExtinf) {
+          segmentLines.push(currentExtinf)
+        }
+        
+        // Handle segment URL proxying if requested
+        let segmentUrl = trimmedLine
+        if (proxySegments) {
+          const baseUrl = new URL(request.url).origin
+          const fullSegmentUrl = streamInfo.segments.find(seg => 
+            seg.url.includes(trimmedLine.split('?')[0]) || 
+            trimmedLine.includes(seg.filename)
+          )?.url
+          
+          if (fullSegmentUrl) {
+            segmentUrl = `${baseUrl}/api/fl511-segment?url=${encodeURIComponent(fullSegmentUrl)}`
+          }
+        }
+        
+        segmentLines.push(segmentUrl)
+        
+        // Reset for next segment
+        currentExtinf = null
+        currentProgramDateTime = null
+      }
+    }
+
+    // Build the final clean playlist
     const enhancedPlaylist = `#EXTM3U
-#EXT-X-VERSION:3
-#EXT-X-TARGETDURATION:10
-#EXT-X-MEDIA-SEQUENCE:0
-#EXT-X-PLAYLIST-TYPE:LIVE
-${playlistContent.split('\n').filter(line => !line.startsWith('#EXTM3U')).join('\n')}`
+#EXT-X-VERSION:${version}
+#EXT-X-TARGETDURATION:${targetDuration}
+#EXT-X-MEDIA-SEQUENCE:${mediaSequence}
+#EXT-X-PLAYLIST-TYPE:${playlistType}
+${segmentLines.join('\n')}`
 
     return new NextResponse(enhancedPlaylist, {
       status: 200,
