@@ -101,15 +101,18 @@ interface StreamInfo {
 class Florida511AuthService {
   private readonly baseUrl = 'https://fl511.com';
   private readonly divasUrl = 'https://divas.cloud';
+  private lastAuthTime: number = 0;
+  private readonly minAuthInterval = 500; // Minimum 500ms between auth requests
 
   /**
    * Step 1: Get video URL from FL511
    */
-  async step1GetVideoUrl(cameraId: string): Promise<Step1Response | null> {
+  async step1GetVideoUrl(cameraId: string, retryCount: number = 0): Promise<Step1Response | null> {
     const url = `${this.baseUrl}/Camera/GetVideoUrl?imageId=${cameraId}`;
+    const maxRetries = 3;
     
     try {
-      console.log(`Step 1: Getting video URL for camera ${cameraId}...`);
+      console.log(`Step 1: Getting video URL for camera ${cameraId}... (attempt ${retryCount + 1}/${maxRetries + 1})`);
       const response = await fetch(url, {
         method: 'GET',
         headers: FL511_HEADERS,
@@ -123,6 +126,20 @@ class Florida511AuthService {
       });
 
       if (!response.ok) {
+        // Handle rate limiting specifically
+        if (response.status === 429) {
+          console.warn(`⚠️ Step 1 rate limited (429) for camera ${cameraId}`);
+          if (retryCount < maxRetries) {
+            const backoffDelay = Math.min(1000 * Math.pow(2, retryCount), 5000); // Exponential backoff, max 5s
+            console.log(`🔄 Retrying after ${backoffDelay}ms...`);
+            await new Promise(resolve => setTimeout(resolve, backoffDelay));
+            return this.step1GetVideoUrl(cameraId, retryCount + 1);
+          } else {
+            console.error(`❌ Step 1 failed after ${maxRetries + 1} attempts - rate limited`);
+            return null;
+          }
+        }
+        
         console.warn(`Step 1 failed: ${response.status}`);
         return null;
       }
@@ -133,6 +150,11 @@ class Florida511AuthService {
       
     } catch (error) {
       console.error('Step 1 failed:', error);
+      if (retryCount < maxRetries) {
+        console.log(`🔄 Retrying after network error...`);
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        return this.step1GetVideoUrl(cameraId, retryCount + 1);
+      }
       return null;
     }
   }
@@ -140,8 +162,9 @@ class Florida511AuthService {
   /**
    * Step 2: Get secure token URI from Divas cloud
    */
-  async step2GetSecureTokenUri(token: string, sourceId: string, systemSourceId: string = "District 2"): Promise<Step2Response | string | null> {
+  async step2GetSecureTokenUri(token: string, sourceId: string, systemSourceId: string = "District 2", retryCount: number = 0): Promise<Step2Response | string | null> {
     const url = `${this.divasUrl}/VDS-API/SecureTokenUri/GetSecureTokenUriBySourceId`;
+    const maxRetries = 3;
     
     const payload = {
       token,
@@ -150,7 +173,7 @@ class Florida511AuthService {
     };
     
     try {
-      console.log('Step 2: Getting secure token URI...');
+      console.log(`Step 2: Getting secure token URI... (attempt ${retryCount + 1}/${maxRetries + 1})`);
       const response = await fetch(url, {
         method: 'POST',
         headers: DIVAS_HEADERS,
@@ -165,6 +188,20 @@ class Florida511AuthService {
       });
 
       if (!response.ok) {
+        // Handle rate limiting specifically
+        if (response.status === 429) {
+          console.warn(`⚠️ Step 2 rate limited (429)`);
+          if (retryCount < maxRetries) {
+            const backoffDelay = Math.min(1000 * Math.pow(2, retryCount), 5000); // Exponential backoff, max 5s
+            console.log(`🔄 Retrying after ${backoffDelay}ms...`);
+            await new Promise(resolve => setTimeout(resolve, backoffDelay));
+            return this.step2GetSecureTokenUri(token, sourceId, systemSourceId, retryCount + 1);
+          } else {
+            console.error(`❌ Step 2 failed after ${maxRetries + 1} attempts - rate limited`);
+            return null;
+          }
+        }
+        
         console.warn(`Step 2 failed: ${response.status}`);
         return null;
       }
@@ -175,6 +212,11 @@ class Florida511AuthService {
       
     } catch (error) {
       console.error('Step 2 failed:', error);
+      if (retryCount < maxRetries) {
+        console.log(`🔄 Retrying after network error...`);
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        return this.step2GetSecureTokenUri(token, sourceId, systemSourceId, retryCount + 1);
+      }
       return null;
     }
   }
@@ -302,6 +344,16 @@ class Florida511AuthService {
    * Complete authentication flow - get streaming info for a camera
    */
   async getVideoStreamInfo(cameraId: string, indexVideoUrl: string): Promise<StreamInfo | null> {
+    // Rate limiting: ensure minimum time between authentication requests
+    const now = Date.now();
+    const timeSinceLastAuth = now - this.lastAuthTime;
+    if (timeSinceLastAuth < this.minAuthInterval) {
+      const delayNeeded = this.minAuthInterval - timeSinceLastAuth;
+      console.log(`⏱️ Rate limiting: waiting ${delayNeeded}ms before authentication...`);
+      await new Promise(resolve => setTimeout(resolve, delayNeeded));
+    }
+    this.lastAuthTime = Date.now();
+    
     console.log('='.repeat(60));
     console.log(`FL-511 Video Authentication Flow - Camera ${cameraId}`);
     console.log(`🔗 Auth Service - Received video URL: ${indexVideoUrl}`);

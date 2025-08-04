@@ -34,12 +34,14 @@ function HLSVideoPlayer({ src, playing, onToggle, cameraId, camera }: {
   const [streamUrl, setStreamUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [loadingMessage, setLoadingMessage] = useState('Authenticating stream...');
 
   // Get authenticated stream URL
   useEffect(() => {
     const getAuthenticatedUrl = async () => {
       setLoading(true);
       setError(null);
+      setLoadingMessage('Authenticating stream...');
 
       try {
         // Assert and log video URL before proceeding
@@ -78,9 +80,13 @@ function HLSVideoPlayer({ src, playing, onToggle, cameraId, camera }: {
           cameraId: cameraId
         });
 
+        setLoadingMessage('Connecting to FL511...');
         const proxyResponse = await fetch(`/api/video-proxy/${cameraId}?${urlParams}`);
         
         if (!proxyResponse.ok) {
+          if (proxyResponse.status === 429) {
+            throw new Error('FL511 is temporarily rate limiting requests. Please wait a moment and try again.');
+          }
           throw new Error(`Authentication failed: ${proxyResponse.status}`);
         }
 
@@ -93,6 +99,8 @@ function HLSVideoPlayer({ src, playing, onToggle, cameraId, camera }: {
             authenticatedAt: proxyData.metadata?.authenticatedAt,
             alternativeEndpoints: proxyData.alternativeEndpoints
           });
+          
+          setLoadingMessage('Setting up video stream...');
           
           // Use the CORS-enabled playlist proxy with segment proxying
           // This prevents CORS errors when HLS.js tries to access the stream and segments
@@ -238,7 +246,7 @@ function HLSVideoPlayer({ src, playing, onToggle, cameraId, camera }: {
       <div className="w-full h-full bg-neutral-800 flex items-center justify-center">
         <div className="text-center text-neutral-400">
           <div className="animate-spin w-8 h-8 border-2 border-neutral-600 border-t-white rounded-full mx-auto mb-2"></div>
-          <div className="text-sm">Authenticating stream...</div>
+          <div className="text-sm">{loadingMessage}</div>
         </div>
       </div>
     );
