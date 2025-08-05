@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getFloridaCameraStreamInfo, needsAuthentication } from '@/lib/florida511-auth'
+import { getFloridaCameraStreamInfo, needsAuthentication, isAuthServiceInCooldown } from '@/lib/florida511-auth'
 
 interface CameraVideoRequest {
   cameraId: string
@@ -46,6 +46,17 @@ export async function GET(
     }
 
     console.log(`✅ Video Proxy: Using provided video URL: ${originalUrl}`)
+
+    // Check if we're in a rate limit cooldown before attempting authentication
+    const cooldownStatus = isAuthServiceInCooldown();
+    if (cooldownStatus.inCooldown) {
+      return NextResponse.json({
+        error: 'FL511 rate limit cooldown active',
+        cameraId,
+        message: `Please wait ${cooldownStatus.remainingSeconds} seconds before trying again. FL511 is temporarily limiting requests.`,
+        remainingCooldownSeconds: cooldownStatus.remainingSeconds
+      }, { status: 429 })
+    }
 
     // For Florida 511 cameras that need authentication, use enhanced flow
     const streamInfo = await getFloridaCameraStreamInfo(cameraId, originalUrl)

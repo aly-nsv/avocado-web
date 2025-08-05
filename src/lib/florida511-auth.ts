@@ -103,16 +103,40 @@ class Florida511AuthService {
   private readonly divasUrl = 'https://divas.cloud';
   private lastAuthTime: number = 0;
   private readonly minAuthInterval = 500; // Minimum 500ms between auth requests
+  private rateLimitCooldownUntil: number = 0;
+  private readonly rateLimitCooldownDuration = 60000; // 60 seconds
+
+  /**
+   * Check if we're currently in a rate limit cooldown period
+   */
+  public isInRateLimitCooldown(): boolean {
+    return Date.now() < this.rateLimitCooldownUntil;
+  }
+
+  /**
+   * Get remaining cooldown time in seconds
+   */
+  public getRemainingCooldownTime(): number {
+    const remaining = this.rateLimitCooldownUntil - Date.now();
+    return Math.ceil(remaining / 1000);
+  }
+
+  /**
+   * Set rate limit cooldown period
+   */
+  private setRateLimitCooldown(): void {
+    this.rateLimitCooldownUntil = Date.now() + this.rateLimitCooldownDuration;
+    console.log(`🚫 Rate limit cooldown activated for ${this.rateLimitCooldownDuration / 1000} seconds`);
+  }
 
   /**
    * Step 1: Get video URL from FL511
    */
-  async step1GetVideoUrl(cameraId: string, retryCount: number = 0): Promise<Step1Response | null> {
+  async step1GetVideoUrl(cameraId: string): Promise<Step1Response | null> {
     const url = `${this.baseUrl}/Camera/GetVideoUrl?imageId=${cameraId}`;
-    const maxRetries = 3;
     
     try {
-      console.log(`Step 1: Getting video URL for camera ${cameraId}... (attempt ${retryCount + 1}/${maxRetries + 1})`);
+      console.log(`Step 1: Getting video URL for camera ${cameraId}...`);
       const response = await fetch(url, {
         method: 'GET',
         headers: FL511_HEADERS,
@@ -126,18 +150,11 @@ class Florida511AuthService {
       });
 
       if (!response.ok) {
-        // Handle rate limiting specifically
+        // Handle rate limiting specifically - set cooldown and stop trying
         if (response.status === 429) {
-          console.warn(`⚠️ Step 1 rate limited (429) for camera ${cameraId}`);
-          if (retryCount < maxRetries) {
-            const backoffDelay = Math.min(1000 * Math.pow(2, retryCount), 5000); // Exponential backoff, max 5s
-            console.log(`🔄 Retrying after ${backoffDelay}ms...`);
-            await new Promise(resolve => setTimeout(resolve, backoffDelay));
-            return this.step1GetVideoUrl(cameraId, retryCount + 1);
-          } else {
-            console.error(`❌ Step 1 failed after ${maxRetries + 1} attempts - rate limited`);
-            return null;
-          }
+          console.warn(`⚠️ Step 1 rate limited (429) for camera ${cameraId} - entering 60s cooldown`);
+          this.setRateLimitCooldown();
+          return null;
         }
         
         console.warn(`Step 1 failed: ${response.status}`);
@@ -150,11 +167,6 @@ class Florida511AuthService {
       
     } catch (error) {
       console.error('Step 1 failed:', error);
-      if (retryCount < maxRetries) {
-        console.log(`🔄 Retrying after network error...`);
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        return this.step1GetVideoUrl(cameraId, retryCount + 1);
-      }
       return null;
     }
   }
@@ -162,9 +174,8 @@ class Florida511AuthService {
   /**
    * Step 2: Get secure token URI from Divas cloud
    */
-  async step2GetSecureTokenUri(token: string, sourceId: string, systemSourceId: string = "District 2", retryCount: number = 0): Promise<Step2Response | string | null> {
+  async step2GetSecureTokenUri(token: string, sourceId: string, systemSourceId: string = "District 2"): Promise<Step2Response | string | null> {
     const url = `${this.divasUrl}/VDS-API/SecureTokenUri/GetSecureTokenUriBySourceId`;
-    const maxRetries = 3;
     
     const payload = {
       token,
@@ -173,7 +184,7 @@ class Florida511AuthService {
     };
     
     try {
-      console.log(`Step 2: Getting secure token URI... (attempt ${retryCount + 1}/${maxRetries + 1})`);
+      console.log(`Step 2: Getting secure token URI...`);
       const response = await fetch(url, {
         method: 'POST',
         headers: DIVAS_HEADERS,
@@ -188,18 +199,11 @@ class Florida511AuthService {
       });
 
       if (!response.ok) {
-        // Handle rate limiting specifically
+        // Handle rate limiting specifically - set cooldown and stop trying
         if (response.status === 429) {
-          console.warn(`⚠️ Step 2 rate limited (429)`);
-          if (retryCount < maxRetries) {
-            const backoffDelay = Math.min(1000 * Math.pow(2, retryCount), 5000); // Exponential backoff, max 5s
-            console.log(`🔄 Retrying after ${backoffDelay}ms...`);
-            await new Promise(resolve => setTimeout(resolve, backoffDelay));
-            return this.step2GetSecureTokenUri(token, sourceId, systemSourceId, retryCount + 1);
-          } else {
-            console.error(`❌ Step 2 failed after ${maxRetries + 1} attempts - rate limited`);
-            return null;
-          }
+          console.warn(`⚠️ Step 2 rate limited (429) - entering 60s cooldown`);
+          this.setRateLimitCooldown();
+          return null;
         }
         
         console.warn(`Step 2 failed: ${response.status}`);
@@ -212,11 +216,6 @@ class Florida511AuthService {
       
     } catch (error) {
       console.error('Step 2 failed:', error);
-      if (retryCount < maxRetries) {
-        console.log(`🔄 Retrying after network error...`);
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        return this.step2GetSecureTokenUri(token, sourceId, systemSourceId, retryCount + 1);
-      }
       return null;
     }
   }
@@ -344,6 +343,13 @@ class Florida511AuthService {
    * Complete authentication flow - get streaming info for a camera
    */
   async getVideoStreamInfo(cameraId: string, indexVideoUrl: string): Promise<StreamInfo | null> {
+    // Check if we're in a rate limit cooldown period
+    if (this.isInRateLimitCooldown()) {
+      const remainingTime = this.getRemainingCooldownTime();
+      console.log(`🚫 Rate limit cooldown active - ${remainingTime}s remaining. Skipping authentication for camera ${cameraId}.`);
+      return null;
+    }
+    
     // Rate limiting: ensure minimum time between authentication requests
     const now = Date.now();
     const timeSinceLastAuth = now - this.lastAuthTime;
@@ -606,6 +612,20 @@ export async function getVideoSegment(segmentUrl: string): Promise<ArrayBuffer |
  */
 export function needsAuthentication(videoUrl: string): boolean {
   return videoUrl.includes('divas.cloud') || videoUrl.includes('dis-se');
+}
+
+/**
+ * Check if the authentication service is currently in rate limit cooldown
+ */
+export function isAuthServiceInCooldown(): { inCooldown: boolean; remainingSeconds?: number } {
+  const isInCooldown = florida511Auth.isInRateLimitCooldown();
+  if (isInCooldown) {
+    return {
+      inCooldown: true,
+      remainingSeconds: florida511Auth.getRemainingCooldownTime()
+    };
+  }
+  return { inCooldown: false };
 }
 
 /**

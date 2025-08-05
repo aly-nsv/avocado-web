@@ -84,8 +84,17 @@ function HLSVideoPlayer({ src, playing, onToggle, cameraId, camera }: {
         const proxyResponse = await fetch(`/api/video-proxy/${cameraId}?${urlParams}`);
         
         if (!proxyResponse.ok) {
+          const errorData = await proxyResponse.json().catch(() => null);
+          
           if (proxyResponse.status === 429) {
-            throw new Error('FL511 is temporarily rate limiting requests. Please wait a moment and try again.');
+            const remainingTime = errorData?.remainingCooldownSeconds || 60;
+            throw new Error(`FL511 rate limit active. Please wait ${remainingTime} seconds before trying again.`);
+          } else if (proxyResponse.status === 404) {
+            if (errorData?.message?.includes('rate limit') || errorData?.message?.includes('cooldown')) {
+              const remainingTime = errorData?.remainingCooldownSeconds || 60;
+              throw new Error(`FL511 rate limit cooldown active. Please wait ${remainingTime} seconds before trying again.`);
+            }
+            throw new Error('Camera authentication failed - camera may be offline or temporarily unavailable.');
           }
           throw new Error(`Authentication failed: ${proxyResponse.status}`);
         }
@@ -107,6 +116,10 @@ function HLSVideoPlayer({ src, playing, onToggle, cameraId, camera }: {
           const proxyPlaylistUrl = `/api/fl511-playlist/${cameraId}?proxy=true&originalUrl=${encodeURIComponent(src)}`;
           console.log('🔄 VideoDrawer - Using CORS-enabled playlist proxy URL:', proxyPlaylistUrl);
           setStreamUrl(proxyPlaylistUrl);
+          
+          // Auto-start video for live traffic cams
+          console.log('🎬 VideoDrawer - Auto-starting video playback for camera:', cameraId);
+          onToggle(); // This will add the camera to the playing set
         } else {
           throw new Error(proxyData.error || 'No secure URL returned');
         }
@@ -133,11 +146,13 @@ function HLSVideoPlayer({ src, playing, onToggle, cameraId, camera }: {
       const hls = new Hls({
         enableWorker: true,
         lowLatencyMode: true,
-        backBufferLength: 30, // Reduce buffer for live streams
-        maxBufferLength: 30, // Keep buffer small for live content
-        maxMaxBufferLength: 60,
+        backBufferLength: 20, // Smaller buffer for live streams
+        maxBufferLength: 20, // Keep buffer small for live content  
+        maxMaxBufferLength: 40,
         liveSyncDurationCount: 3, // How many segments to buffer for live
-        liveMaxLatencyDurationCount: 10,
+        liveMaxLatencyDurationCount: 8,
+        startLevel: -1, // Auto quality selection
+        autoStartLoad: true,
         manifestLoadingTimeOut: 10000,
         manifestLoadingMaxRetry: 3,
         levelLoadingTimeOut: 10000,
@@ -157,8 +172,14 @@ function HLSVideoPlayer({ src, playing, onToggle, cameraId, camera }: {
 
       hls.on(Hls.Events.MANIFEST_PARSED, () => {
         console.log('✅ HLS: Manifest parsed successfully');
+        console.log('🎮 HLS: Video playing state:', playing);
         if (playing) {
-          video.play().catch(console.error);
+          console.log('▶️ HLS: Starting video playback...');
+          video.play().catch(err => {
+            console.error('❌ HLS: Video play failed:', err);
+          });
+        } else {
+          console.log('⏸️ HLS: Video not set to playing, staying paused');
         }
       });
 
@@ -172,6 +193,27 @@ function HLSVideoPlayer({ src, playing, onToggle, cameraId, camera }: {
 
       hls.on(Hls.Events.FRAG_LOAD_EMERGENCY_ABORTED, (event, data) => {
         console.warn('⚠️ HLS: Fragment load emergency aborted', data);
+      });
+
+      // Add more debugging events for video playback
+      hls.on(Hls.Events.MEDIA_ATTACHED, () => {
+        console.log('🔗 HLS: Media attached to video element');
+      });
+
+      hls.on(Hls.Events.FRAG_BUFFERED, (event, data) => {
+        console.log('💾 HLS: Fragment buffered', { stats: data.stats, frag: data.frag.url });
+      });
+
+      // Video element events
+      video.addEventListener('loadstart', () => console.log('📼 Video: Load start'));
+      video.addEventListener('loadeddata', () => console.log('📼 Video: Loaded data'));
+      video.addEventListener('canplay', () => console.log('📼 Video: Can play'));
+      video.addEventListener('playing', () => console.log('▶️ Video: Started playing'));
+      video.addEventListener('pause', () => console.log('⏸️ Video: Paused'));
+      video.addEventListener('timeupdate', () => {
+        if (video.currentTime > 0) {
+          console.log(`⏰ Video: Time update - ${video.currentTime.toFixed(2)}s`);
+        }
       });
 
       hls.on(Hls.Events.ERROR, (event, data) => {
@@ -277,6 +319,7 @@ function HLSVideoPlayer({ src, playing, onToggle, cameraId, camera }: {
         className="w-full h-full object-cover"
         muted
         playsInline
+        autoPlay
         controls={false}
       />
       
