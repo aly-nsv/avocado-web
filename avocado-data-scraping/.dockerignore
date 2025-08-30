@@ -1,0 +1,50 @@
+# Python cache files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+pip-log.txt
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv/
+fl-video-auth/venv/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Git
+.git/
+.gitignore
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Large data files - except the ones we need for deployment
+*.json
+!fl511_i4_i95_cameras.json
+!fl511_video_auth_cache.json
+*.csv
+*.log
+*.zip
+*.tar.gz
+
+# Documentation
+*.md
+README.*
+
+# Test files
+test_*.py
+*_test.py
+
+# Temporary files
+tmp/
+temp/
+*.tmp

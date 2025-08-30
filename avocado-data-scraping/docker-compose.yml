@@ -1,0 +1,34 @@
+version: '3.8'
+
+services:
+  fl511-video-capture:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      - PROJECT_ID=${PROJECT_ID}
+      - REGION=${REGION:-us-central1}
+      - DATABASE_NAME=fl511_metadata
+      - DATABASE_USER=fl511_user
+      - DATABASE_PASSWORD=fl511_password
+    volumes:
+      - ./video_data:/app/video_data
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    
+  postgres:
+    image: postgres:14
+    environment:
+      POSTGRES_DB: fl511_metadata
+      POSTGRES_USER: fl511_user
+      POSTGRES_PASSWORD: fl511_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database_schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
+    restart: unless-stopped
+
+volumes:
+  postgres_data:

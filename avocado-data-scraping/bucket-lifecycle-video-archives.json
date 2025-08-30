@@ -1,0 +1,23 @@
+{
+  "lifecycle": {
+    "rule": [
+      {
+        "action": {
+          "type": "SetStorageClass",
+          "storageClass": "COLDLINE"
+        },
+        "condition": {
+          "age": 7
+        }
+      },
+      {
+        "action": {
+          "type": "Delete"
+        },
+        "condition": {
+          "age": 365
+        }
+      }
+    ]
+  }
+}
