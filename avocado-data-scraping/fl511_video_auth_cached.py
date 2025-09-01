@@ -16,7 +16,7 @@ from urllib.parse import urljoin, urlparse
 from pathlib import Path
 
 # Configure logging
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 # Suppress SSL warnings for development
@@ -179,11 +179,19 @@ class FL511VideoAuthCached:
             return None
 
     def step3_get_master_playlist(self, base_video_url: str, token: str) -> Optional[str]:
-        """Step 3: Get HLS master playlist (unchanged)"""
-        url = f"{base_video_url}?token={token}"
+        """Step 3: Get HLS master playlist (fixed duplicate token issue)"""
+        # Handle case where base_video_url already has token parameter
+        if '?token=' in base_video_url:
+            # Replace existing token with new one
+            clean_url = base_video_url.split('?token=')[0]
+        else:
+            clean_url = base_video_url
+            
+        url = f"{clean_url}?token={token}"
         
         try:
             logger.debug(f"Step 3: Getting master playlist...")
+            logger.debug(f"  URL: {url}")
             
             response = self.session.get(url, headers=self.stream_headers, timeout=30, verify=False)
             response.raise_for_status()
@@ -202,22 +210,33 @@ class FL511VideoAuthCached:
             return None
 
     def step4_get_video_playlist(self, base_video_url: str, token: str) -> Optional[Dict]:
-        """Step 4: Get HLS video playlist with segments (unchanged)"""
+        """Step 4: Get HLS video playlist with segments (fixed duplicate token issue)"""
         xflow_url = base_video_url.replace('index.m3u8', 'xflow.m3u8')
+        
+        # Handle case where base_video_url already has token parameter
+        if '?token=' in xflow_url:
+            # Replace existing token with new one
+            xflow_url = xflow_url.split('?token=')[0]
+        
         url = f"{xflow_url}?token={token}"
         
         try:
             logger.debug(f"Step 4: Getting video playlist...")
+            logger.debug(f"  URL: {url}")
             
             response = self.session.get(url, headers=self.stream_headers, timeout=30, verify=False)
             response.raise_for_status()
             
             playlist_content = response.text
-            logger.debug(f"✅ Step 4 successful - Video playlist retrieved ({len(playlist_content)} chars)")
+            logger.info(f"✅ Step 4 successful - Video playlist retrieved ({len(playlist_content)} chars)")
             
             if '#EXTM3U' not in playlist_content:
                 logger.warning("❌ Response doesn't look like an M3U playlist")
+                logger.warning(f"Response content: {playlist_content[:500]}...")
                 return None
+            
+            # Log the playlist content to see what we're getting
+            logger.info(f"Playlist content preview: {playlist_content[:500]}...")
             
             segments = self._parse_m3u8_playlist(playlist_content, url)
             
@@ -228,7 +247,12 @@ class FL511VideoAuthCached:
                 'playlist_url': url
             }
             
-            logger.debug(f"  Found {len(segments)} video segments")
+            logger.info(f"  Found {len(segments)} video segments")
+            if len(segments) == 0:
+                logger.warning("❌ No segments parsed from playlist")
+                # Show more of the playlist for debugging
+                logger.warning(f"Full playlist content: {playlist_content}")
+            
             return result
             
         except requests.exceptions.RequestException as e:
@@ -255,7 +279,7 @@ class FL511VideoAuthCached:
         import re
         
         segments = []
-        lines = playlist_content.strip().split('\\n')
+        lines = playlist_content.strip().split('\n')
         
         base_url_parsed = urlparse(base_url)
         base_path = '/'.join(base_url_parsed.path.split('/')[:-1]) + '/'
@@ -268,16 +292,26 @@ class FL511VideoAuthCached:
             line = line.strip()
             
             if line.startswith('#EXTINF:'):
-                duration_match = re.search(r'#EXTINF:([\\d.]+)', line)
+                duration_match = re.search(r'#EXTINF:([\d.]+)', line)
                 if duration_match:
                     current_duration = float(duration_match.group(1))
+                    logger.debug(f"Found EXTINF: {line} -> duration: {current_duration}")
             
             elif line.startswith('#EXT-X-PROGRAM-DATE-TIME:'):
                 current_date = line.replace('#EXT-X-PROGRAM-DATE-TIME:', '')
+                logger.debug(f"Found program date: {current_date}")
             
-            elif line.endswith('.ts') or ('?token=' in line and '.ts' in line):
-                if not line or line.startswith('#'):
+            elif '.ts' in line and not line.startswith('#'):
+                # Handle segment lines (like "175d71cfa01b_seg10702.ts?token=...")
+                if not line.strip():
                     continue
+                    
+                logger.debug(f"Processing segment line: {line}")
+                    
+                # Fix duplicate token parameters in segment URLs
+                if '&token=' in line:
+                    # Remove duplicate token parameters
+                    line = line.split('&token=')[0]
                     
                 if line.startswith('http'):
                     full_url = line
@@ -291,6 +325,7 @@ class FL511VideoAuthCached:
                     'program_date_time': current_date
                 }
                 segments.append(segment_info)
+                logger.debug(f"Added segment: {segment_info['filename']} - {full_url}")
                 
                 current_duration = None
                 current_date = None
