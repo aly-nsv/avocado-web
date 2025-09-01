@@ -1,21 +1,21 @@
 {
   "metadata": {
-    "generated_at": "2025-08-28T14:08:56.780755",
+    "generated_at": "2025-09-01T10:07:08.344574",
     "total_cameras": 224,
     "roadways": [
       "I-4"
     ],
     "regions": [
-      "Central",
-      "Tampa Bay"
+      "Tampa Bay",
+      "Central"
     ],
     "counties": [
       "Hillsborough",
-      "Seminole",
       "Orange",
+      "Volusia",
       "Osceola",
       "Polk",
-      "Volusia"
+      "Seminole"
     ]
   },
   "cameras": [
@@ -419,8 +419,7 @@
             "description": "CCTV I-4 11.0 EB",
             "imageUrl": "/map/Cctv/2330",
             "imageType": 0,
-            "videoUrl": "https://dis-se11.divas.cloud:8200/chan-4632_h/index.m3u8",
-            "videoType": "application/x-mpegURL",
+            "videoUrl": "",
             "isVideoAuthRequired": true,
             "videoDisabled": false,
             "disabled": false,
@@ -460,10 +459,7 @@
         "city": null,
         "dotDistrict": "District 7",
         "country": "United States"
-      },
-      "video_url": "https://dis-se11.divas.cloud:8200/chan-4632_h/index.m3u8",
-      "thumbnail_url": "https://fl511.com/map/Cctv/2330",
-      "is_video_auth_required": true
+      }
     },
     {
       "id": "2377",
@@ -994,8 +990,8 @@
       "id": "2488",
       "name": "I-4 E of McIntosh Rd",
       "description": "I-4 E of McIntosh Rd",
-      "latitude": 28.026033,
-      "longitude": -82.231338,
+      "latitude": 28.04,
+      "longitude": -82.4,
       "install_date": "2024-12-12T16:12:05.5022807+00:00",
       "equipment_type": "application/x-mpegURL",
       "region": "Tampa Bay",
@@ -1040,11 +1036,11 @@
         "latLng": {
           "geography": {
             "coordinateSystemId": 4326,
-            "wellKnownText": "POINT (-82.231338 28.026033)"
+            "wellKnownText": "POINT (-82.4 28.04)"
           }
         },
-        "linkId1": "1255645397T",
-        "linkId2": "1255645399F",
+        "linkId1": null,
+        "linkId2": null,
         "created": "2024-12-12T16:12:05.5022807+00:00",
         "lastUpdated": null,
         "lastEditedBy": null,
@@ -1736,8 +1732,8 @@
       "id": "2522",
       "name": "I-4 at McIntosh Rd",
       "description": "I-4 at McIntosh Rd",
-      "latitude": 28.046909,
-      "longitude": -82.403297,
+      "latitude": 28.04,
+      "longitude": -82.4,
       "install_date": "2024-12-12T16:12:05.5022807+00:00",
       "equipment_type": "application/x-mpegURL",
       "region": "Tampa Bay",
@@ -1782,7 +1778,7 @@
         "latLng": {
           "geography": {
             "coordinateSystemId": 4326,
-            "wellKnownText": "POINT (-82.403297 28.046909)"
+            "wellKnownText": "POINT (-82.4 28.04)"
           }
         },
         "linkId1": null,
@@ -2949,7 +2945,8 @@
             "description": "0199_I-4_M_MM_73.6",
             "imageUrl": "/map/Cctv/802",
             "imageType": 0,
-            "videoUrl": "",
+            "videoUrl": "https://dis-se14.divas.cloud:8200/chan-7383_h/index.m3u8",
+            "videoType": "application/x-mpegURL",
             "isVideoAuthRequired": true,
             "videoDisabled": false,
             "disabled": false,
@@ -2974,7 +2971,7 @@
           }
         },
         "linkId1": "891870898F",
-        "linkId2": "1329117606T",
+        "linkId2": null,
         "created": "2024-12-12T16:12:05.4265895+00:00",
         "lastUpdated": null,
         "lastEditedBy": null,
@@ -2989,7 +2986,10 @@
         "city": null,
         "dotDistrict": "District 5",
         "country": "United States"
-      }
+      },
+      "video_url": "https://dis-se14.divas.cloud:8200/chan-7383_h/index.m3u8",
+      "thumbnail_url": "https://fl511.com/map/Cctv/802",
+      "is_video_auth_required": true
     },
     {
       "id": "804",
@@ -6397,7 +6397,7 @@
           }
         },
         "linkId1": "1281889442F",
-        "linkId2": "1281889443T",
+        "linkId2": null,
         "created": "2024-12-12T16:12:05.4688817+00:00",
         "lastUpdated": null,
         "lastEditedBy": null,
@@ -6547,7 +6547,7 @@
           }
         },
         "linkId1": "1283982324F",
-        "linkId2": "1309458480T",
+        "linkId2": null,
         "created": "2024-12-12T16:12:05.4688817+00:00",
         "lastUpdated": null,
         "lastEditedBy": null,
@@ -6622,7 +6622,7 @@
           }
         },
         "linkId1": "17008514F",
-        "linkId2": "786671187T",
+        "linkId2": null,
         "created": "2024-12-12T16:12:05.4688817+00:00",
         "lastUpdated": null,
         "lastEditedBy": null,
@@ -7117,8 +7117,7 @@
             "description": "0349_I-4_EB_MM_82.1",
             "imageUrl": "/map/Cctv/953",
             "imageType": 0,
-            "videoUrl": "https://dis-se2.divas.cloud:8200/chan-8511_h/index.m3u8",
-            "videoType": "application/x-mpegURL",
+            "videoUrl": "",
             "isVideoAuthRequired": true,
             "videoDisabled": false,
             "disabled": false,
@@ -7158,10 +7157,7 @@
         "city": null,
         "dotDistrict": "District 5",
         "country": "United States"
-      },
-      "video_url": "https://dis-se2.divas.cloud:8200/chan-8511_h/index.m3u8",
-      "thumbnail_url": "https://fl511.com/map/Cctv/953",
-      "is_video_auth_required": true
+      }
     },
     {
       "id": "954",
@@ -7938,8 +7934,7 @@
             "description": "0403_I-4_EB_MM_85.1",
             "imageUrl": "/map/Cctv/976",
             "imageType": 0,
-            "videoUrl": "https://dis-se11.divas.cloud:8200/chan-8603_h/index.m3u8",
-            "videoType": "application/x-mpegURL",
+            "videoUrl": "",
             "isVideoAuthRequired": true,
             "videoDisabled": false,
             "disabled": false,
@@ -7979,10 +7974,7 @@
         "city": null,
         "dotDistrict": "District 5",
         "country": "United States"
-      },
-      "video_url": "https://dis-se11.divas.cloud:8200/chan-8603_h/index.m3u8",
-      "thumbnail_url": "https://fl511.com/map/Cctv/976",
-      "is_video_auth_required": true
+      }
     },
     {
       "id": "1022",
@@ -9509,8 +9501,7 @@
             "description": "0050_I-4_WB_MM_61.7",
             "imageUrl": "/map/Cctv/1142",
             "imageType": 0,
-            "videoUrl": "https://dis-se14.divas.cloud:8200/chan-9684_h/index.m3u8",
-            "videoType": "application/x-mpegURL",
+            "videoUrl": "",
             "isVideoAuthRequired": true,
             "videoDisabled": false,
             "disabled": false,
@@ -9535,7 +9526,7 @@
           }
         },
         "linkId1": "1279145135T",
-        "linkId2": null,
+        "linkId2": "1279145137F",
         "created": "2024-12-12T16:12:05.4845249+00:00",
         "lastUpdated": null,
         "lastEditedBy": null,
@@ -9550,10 +9541,7 @@
         "city": null,
         "dotDistrict": "District 5",
         "country": "United States"
-      },
-      "video_url": "https://dis-se14.divas.cloud:8200/chan-9684_h/index.m3u8",
-      "thumbnail_url": "https://fl511.com/map/Cctv/1142",
-      "is_video_auth_required": true
+      }
     },
     {
       "id": "1150",
@@ -9659,8 +9647,7 @@
             "description": "0100_I-4_M_MM_65.3",
             "imageUrl": "/map/Cctv/1170",
             "imageType": 0,
-            "videoUrl": "https://dis-se4.divas.cloud:8200/chan-9712_h/index.m3u8",
-            "videoType": "application/x-mpegURL",
+            "videoUrl": "",
             "isVideoAuthRequired": true,
             "videoDisabled": false,
             "disabled": false,
@@ -9685,7 +9672,7 @@
           }
         },
         "linkId1": "724047715F",
-        "linkId2": null,
+        "linkId2": "809039570T",
         "created": "2024-12-12T16:12:05.4845249+00:00",
         "lastUpdated": null,
         "lastEditedBy": null,
@@ -9700,10 +9687,7 @@
         "city": null,
         "dotDistrict": "District 5",
         "country": "United States"
-      },
-      "video_url": "https://dis-se4.divas.cloud:8200/chan-9712_h/index.m3u8",
-      "thumbnail_url": "https://fl511.com/map/Cctv/1170",
-      "is_video_auth_required": true
+      }
     },
     {
       "id": "1193",
@@ -11389,7 +11373,7 @@
           }
         },
         "linkId1": "1120321786T",
-        "linkId2": null,
+        "linkId2": "1230787534F",
         "created": "2025-07-11T16:47:05.1941411+00:00",
         "lastUpdated": null,
         "lastEditedBy": null,
@@ -12473,8 +12457,7 @@
             "description": "0508_I-4_WB_MM_92.9",
             "imageUrl": "/map/Cctv/874",
             "imageType": 0,
-            "videoUrl": "https://dis-se14.divas.cloud:8200/chan-7457_h/index.m3u8",
-            "videoType": "application/x-mpegURL",
+            "videoUrl": "",
             "isVideoAuthRequired": true,
             "videoDisabled": false,
             "disabled": false,
@@ -12514,10 +12497,7 @@
         "city": null,
         "dotDistrict": "District 5",
         "country": "United States"
-      },
-      "video_url": "https://dis-se14.divas.cloud:8200/chan-7457_h/index.m3u8",
-      "thumbnail_url": "https://fl511.com/map/Cctv/874",
-      "is_video_auth_required": true
+      }
     },
     {
       "id": "875",
@@ -13065,8 +13045,7 @@
             "description": "0491_I-4_M_MM_92.1",
             "imageUrl": "/map/Cctv/904",
             "imageType": 0,
-            "videoUrl": "https://dis-se26.divas.cloud:8200/chan-8430_h/index.m3u8",
-            "videoType": "application/x-mpegURL",
+            "videoUrl": "",
             "isVideoAuthRequired": true,
             "videoDisabled": false,
             "disabled": false,
@@ -13091,7 +13070,7 @@
           }
         },
         "linkId1": "1293570795F",
-        "linkId2": "821705445T",
+        "linkId2": null,
         "created": "2024-12-12T16:12:05.4688817+00:00",
         "lastUpdated": null,
         "lastEditedBy": null,
@@ -13106,10 +13085,7 @@
         "city": null,
         "dotDistrict": "District 5",
         "country": "United States"
-      },
-      "video_url": "https://dis-se26.divas.cloud:8200/chan-8430_h/index.m3u8",
-      "thumbnail_url": "https://fl511.com/map/Cctv/904",
-      "is_video_auth_required": true
+      }
     },
     {
       "id": "911",
@@ -13316,7 +13292,7 @@
           }
         },
         "linkId1": "1296867079F",
-        "linkId2": "1358158643T",
+        "linkId2": null,
         "created": "2024-12-12T16:12:05.4688817+00:00",
         "lastUpdated": null,
         "lastEditedBy": null,

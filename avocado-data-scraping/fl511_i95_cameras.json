@@ -1,28 +1,28 @@
 {
   "metadata": {
-    "generated_at": "2025-08-28T14:08:56.801907",
+    "generated_at": "2025-09-01T10:07:08.369050",
     "total_cameras": 552,
     "roadways": [
       "I-95"
     ],
     "regions": [
       "Northeast",
-      "Southeast",
-      "Central"
+      "Central",
+      "Southeast"
     ],
     "counties": [
-      "St. Lucie",
-      "Palm Beach",
-      "Brevard",
       "Miami-Dade",
+      "Nassau",
       "Duval",
+      "Martin",
+      "Indian River",
       "Flagler",
       "St. Johns",
-      "Indian River",
-      "Broward",
-      "Nassau",
+      "St. Lucie",
       "Volusia",
-      "Martin"
+      "Palm Beach",
+      "Brevard",
+      "Broward"
     ]
   },
   "cameras": [
@@ -6957,7 +6957,7 @@
           }
         },
         "linkId1": "1343930179T",
-        "linkId2": "1158538023F",
+        "linkId2": null,
         "created": "2024-12-12T16:12:05.3831137+00:00",
         "lastUpdated": null,
         "lastEditedBy": null,
@@ -7545,7 +7545,7 @@
           }
         },
         "linkId1": "127628167F",
-        "linkId2": "1229224690T",
+        "linkId2": null,
         "created": "2024-12-12T16:12:05.4108628+00:00",
         "lastUpdated": null,
         "lastEditedBy": null,
@@ -9100,7 +9100,7 @@
           }
         },
         "linkId1": "808179501F",
-        "linkId2": "1149003082T",
+        "linkId2": null,
         "created": "2024-12-12T16:12:05.4845249+00:00",
         "lastUpdated": null,
         "lastEditedBy": null,
@@ -9325,7 +9325,7 @@
           }
         },
         "linkId1": "1229444610T",
-        "linkId2": "1158493531F",
+        "linkId2": null,
         "created": "2024-12-12T16:12:05.4845249+00:00",
         "lastUpdated": null,
         "lastEditedBy": null,
@@ -9700,7 +9700,7 @@
           }
         },
         "linkId1": "781871975F",
-        "linkId2": "711714934T",
+        "linkId2": null,
         "created": "2024-12-12T16:12:05.5001444+00:00",
         "lastUpdated": null,
         "lastEditedBy": null,
@@ -10300,7 +10300,7 @@
           }
         },
         "linkId1": "887988863F",
-        "linkId2": "887988861T",
+        "linkId2": null,
         "created": "2025-07-09T18:50:09.1182267+00:00",
         "lastUpdated": null,
         "lastEditedBy": null,
@@ -10596,7 +10596,7 @@
           }
         },
         "linkId1": "1344285302T",
-        "linkId2": "1343762482F",
+        "linkId2": null,
         "created": "2025-07-10T14:06:11.9832063+00:00",
         "lastUpdated": null,
         "lastEditedBy": null,
@@ -10821,7 +10821,7 @@
           }
         },
         "linkId1": "1281565432T",
-        "linkId2": "1245370847F",
+        "linkId2": null,
         "created": "2024-12-12T16:12:05.3752272+00:00",
         "lastUpdated": null,
         "lastEditedBy": null,
@@ -11496,7 +11496,7 @@
           }
         },
         "linkId1": "113432415T",
-        "linkId2": "23061956F",
+        "linkId2": null,
         "created": "2024-12-12T16:12:05.4688817+00:00",
         "lastUpdated": null,
         "lastEditedBy": null,
@@ -12171,7 +12171,7 @@
           }
         },
         "linkId1": "1205506098F",
-        "linkId2": "1127967546T",
+        "linkId2": null,
         "created": "2024-12-12T16:12:05.4688817+00:00",
         "lastUpdated": null,
         "lastEditedBy": null,
@@ -12295,7 +12295,8 @@
             "description": "3068_I95_346.5_N University",
             "imageUrl": "/map/Cctv/1557",
             "imageType": 0,
-            "videoUrl": "",
+            "videoUrl": "https://dis-se18.divas.cloud:8200/chan-8325_h/index.m3u8",
+            "videoType": "application/x-mpegURL",
             "isVideoAuthRequired": true,
             "videoDisabled": false,
             "disabled": false,
@@ -12335,7 +12336,10 @@
         "city": null,
         "dotDistrict": "District 2",
         "country": "United States"
-      }
+      },
+      "video_url": "https://dis-se18.divas.cloud:8200/chan-8325_h/index.m3u8",
+      "thumbnail_url": "https://fl511.com/map/Cctv/1557",
+      "is_video_auth_required": true
     },
     {
       "id": "1558",
@@ -14555,7 +14559,7 @@
           }
         },
         "linkId1": "1245370847F",
-        "linkId2": "1281564911T",
+        "linkId2": null,
         "created": "2024-12-12T16:12:05.4688817+00:00",
         "lastUpdated": null,
         "lastEditedBy": null,
@@ -14829,8 +14833,7 @@
             "description": "3099_I95_358.3_Heckscher",
             "imageUrl": "/map/Cctv/1748",
             "imageType": 0,
-            "videoUrl": "https://dis-se3.divas.cloud:8200/chan-9587_h/index.m3u8",
-            "videoType": "application/x-mpegURL",
+            "videoUrl": "",
             "isVideoAuthRequired": true,
             "videoDisabled": false,
             "disabled": false,
@@ -14855,7 +14858,7 @@
           }
         },
         "linkId1": "1281565101T",
-        "linkId2": null,
+        "linkId2": "23056494F",
         "created": "2024-12-12T16:12:05.4845249+00:00",
         "lastUpdated": null,
         "lastEditedBy": null,
@@ -14870,10 +14873,7 @@
         "city": null,
         "dotDistrict": "District 2",
         "country": "United States"
-      },
-      "video_url": "https://dis-se3.divas.cloud:8200/chan-9587_h/index.m3u8",
-      "thumbnail_url": "https://fl511.com/map/Cctv/1748",
-      "is_video_auth_required": true
+      }
     },
     {
       "id": "1777",
@@ -14979,7 +14979,8 @@
             "description": "3090_I95_353.0_Union",
             "imageUrl": "/map/Cctv/1785",
             "imageType": 0,
-            "videoUrl": "",
+            "videoUrl": "https://dis-se2.divas.cloud:8200/chan-9624_h/index.m3u8",
+            "videoType": "application/x-mpegURL",
             "isVideoAuthRequired": true,
             "videoDisabled": false,
             "disabled": false,
@@ -15004,7 +15005,7 @@
           }
         },
         "linkId1": "1281565597F",
-        "linkId2": null,
+        "linkId2": "1281565234T",
         "created": "2024-12-12T16:12:05.4845249+00:00",
         "lastUpdated": null,
         "lastEditedBy": null,
@@ -15019,7 +15020,10 @@
         "city": null,
         "dotDistrict": "District 2",
         "country": "United States"
-      }
+      },
+      "video_url": "https://dis-se2.divas.cloud:8200/chan-9624_h/index.m3u8",
+      "thumbnail_url": "https://fl511.com/map/Cctv/1785",
+      "is_video_auth_required": true
     },
     {
       "id": "1793",
@@ -15650,8 +15654,7 @@
             "description": "2411_I-95_SB_MM_286.0-TPAS",
             "imageUrl": "/map/Cctv/776",
             "imageType": 0,
-            "videoUrl": "https://dis-se14.divas.cloud:8200/chan-6315_h/index.m3u8",
-            "videoType": "application/x-mpegURL",
+            "videoUrl": "",
             "isVideoAuthRequired": true,
             "videoDisabled": false,
             "disabled": false,
@@ -15691,10 +15694,7 @@
         "city": null,
         "dotDistrict": "District 5",
         "country": "United States"
-      },
-      "video_url": "https://dis-se14.divas.cloud:8200/chan-6315_h/index.m3u8",
-      "thumbnail_url": "https://fl511.com/map/Cctv/776",
-      "is_video_auth_required": true
+      }
     },
     {
       "id": "777",
@@ -15875,8 +15875,7 @@
             "description": "2405_I-95_NB_MM_285.0",
             "imageUrl": "/map/Cctv/957",
             "imageType": 0,
-            "videoUrl": "https://dis-se16.divas.cloud:8200/chan-8515_h/index.m3u8",
-            "videoType": "application/x-mpegURL",
+            "videoUrl": "",
             "isVideoAuthRequired": true,
             "videoDisabled": false,
             "disabled": false,
@@ -15916,10 +15915,7 @@
         "city": null,
         "dotDistrict": "District 5",
         "country": "United States"
-      },
-      "video_url": "https://dis-se16.divas.cloud:8200/chan-8515_h/index.m3u8",
-      "thumbnail_url": "https://fl511.com/map/Cctv/957",
-      "is_video_auth_required": true
+      }
     },
     {
       "id": "958",
@@ -16625,8 +16621,7 @@
             "description": "2450_I-95_SB_MM_293.5",
             "imageUrl": "/map/Cctv/1084",
             "imageType": 0,
-            "videoUrl": "https://dis-se17.divas.cloud:8200/chan-9409_h/index.m3u8",
-            "videoType": "application/x-mpegURL",
+            "videoUrl": "",
             "isVideoAuthRequired": true,
             "videoDisabled": false,
             "disabled": false,
@@ -16666,10 +16661,7 @@
         "city": null,
         "dotDistrict": "District 5",
         "country": "United States"
-      },
-      "video_url": "https://dis-se17.divas.cloud:8200/chan-9409_h/index.m3u8",
-      "thumbnail_url": "https://fl511.com/map/Cctv/1084",
-      "is_video_auth_required": true
+      }
     },
     {
       "id": "1100",
@@ -16876,7 +16868,7 @@
           }
         },
         "linkId1": "854978685T",
-        "linkId2": "854978687F",
+        "linkId2": null,
         "created": "2024-12-12T16:12:05.3831137+00:00",
         "lastUpdated": null,
         "lastEditedBy": null,
@@ -17764,7 +17756,7 @@
           }
         },
         "linkId1": "1159081450T",
-        "linkId2": "1332048207F",
+        "linkId2": null,
         "created": "2024-12-12T16:12:05.3831137+00:00",
         "lastUpdated": null,
         "lastEditedBy": null,
@@ -18289,7 +18281,7 @@
           }
         },
         "linkId1": "1159116253T",
-        "linkId2": null,
+        "linkId2": "1161786987F",
         "created": "2025-07-09T14:47:15.1269819+00:00",
         "lastUpdated": null,
         "lastEditedBy": null,
@@ -19331,7 +19323,7 @@
           }
         },
         "linkId1": "1320589671T",
-        "linkId2": "1159085201F",
+        "linkId2": null,
         "created": "2024-12-12T16:12:05.3831137+00:00",
         "lastUpdated": null,
         "lastEditedBy": null,
@@ -20231,7 +20223,7 @@
           }
         },
         "linkId1": "1230229347T",
-        "linkId2": "782893171F",
+        "linkId2": null,
         "created": "2024-12-12T16:12:05.3752272+00:00",
         "lastUpdated": null,
         "lastEditedBy": null,
@@ -21802,7 +21794,7 @@
           }
         },
         "linkId1": "727555487T",
-        "linkId2": "1230666182F",
+        "linkId2": null,
         "created": "2024-12-12T16:12:05.3752272+00:00",
         "lastUpdated": null,
         "lastEditedBy": null,
@@ -22627,7 +22619,7 @@
           }
         },
         "linkId1": "1134567972F",
-        "linkId2": "1230344310T",
+        "linkId2": null,
         "created": "2024-12-12T16:12:05.3988357+00:00",
         "lastUpdated": null,
         "lastEditedBy": null,
@@ -26444,7 +26436,7 @@
           }
         },
         "linkId1": "893799067F",
-        "linkId2": "783438485T",
+        "linkId2": null,
         "created": "2024-12-12T16:12:05.3831137+00:00",
         "lastUpdated": null,
         "lastEditedBy": null,
@@ -26519,7 +26511,7 @@
           }
         },
         "linkId1": "893771288F",
-        "linkId2": "1275902331T",
+        "linkId2": null,
         "created": "2024-12-12T16:12:05.3831137+00:00",
         "lastUpdated": null,
         "lastEditedBy": null,
@@ -26793,8 +26785,7 @@
             "description": "0621-CCTV",
             "imageUrl": "/map/Cctv/1954",
             "imageType": 0,
-            "videoUrl": "https://dis-se6.divas.cloud:8200/chan-4255_h/index.m3u8",
-            "videoType": "application/x-mpegURL",
+            "videoUrl": "",
             "isVideoAuthRequired": true,
             "videoDisabled": false,
             "disabled": false,
@@ -26834,10 +26825,7 @@
         "city": null,
         "dotDistrict": "District 4",
         "country": "United States"
-      },
-      "video_url": "https://dis-se6.divas.cloud:8200/chan-4255_h/index.m3u8",
-      "thumbnail_url": "https://fl511.com/map/Cctv/1954",
-      "is_video_auth_required": true
+      }
     },
     {
       "id": "1955",
@@ -27389,8 +27377,7 @@
             "description": "0697-CCTV",
             "imageUrl": "/map/Cctv/1962",
             "imageType": 0,
-            "videoUrl": "https://dis-se15.divas.cloud:8200/chan-4264_h/index.m3u8",
-            "videoType": "application/x-mpegURL",
+            "videoUrl": "",
             "isVideoAuthRequired": true,
             "videoDisabled": false,
             "disabled": false,
@@ -27415,7 +27402,7 @@
           }
         },
         "linkId1": "811939188F",
-        "linkId2": null,
+        "linkId2": "783661724T",
         "created": "2024-12-12T16:12:05.3988357+00:00",
         "lastUpdated": null,
         "lastEditedBy": null,
@@ -27430,10 +27417,7 @@
         "city": null,
         "dotDistrict": "District 4",
         "country": "United States"
-      },
-      "video_url": "https://dis-se15.divas.cloud:8200/chan-4264_h/index.m3u8",
-      "thumbnail_url": "https://fl511.com/map/Cctv/1962",
-      "is_video_auth_required": true
+      }
     },
     {
       "id": "1963",
@@ -27565,7 +27549,7 @@
           }
         },
         "linkId1": "1230006424F",
-        "linkId2": "812485900T",
+        "linkId2": null,
         "created": "2024-12-12T16:12:05.3988357+00:00",
         "lastUpdated": null,
         "lastEditedBy": null,
@@ -27689,8 +27673,7 @@
             "description": "0736-CCTV",
             "imageUrl": "/map/Cctv/1966",
             "imageType": 0,
-            "videoUrl": "https://dis-se11.divas.cloud:8200/chan-4268_h/index.m3u8",
-            "videoType": "application/x-mpegURL",
+            "videoUrl": "",
             "isVideoAuthRequired": true,
             "videoDisabled": false,
             "disabled": false,
@@ -27715,7 +27698,7 @@
           }
         },
         "linkId1": "1277029981F",
-        "linkId2": null,
+        "linkId2": "1277029979T",
         "created": "2024-12-12T16:12:05.3988357+00:00",
         "lastUpdated": null,
         "lastEditedBy": null,
@@ -27730,10 +27713,7 @@
         "city": null,
         "dotDistrict": "District 4",
         "country": "United States"
-      },
-      "video_url": "https://dis-se11.divas.cloud:8200/chan-4268_h/index.m3u8",
-      "thumbnail_url": "https://fl511.com/map/Cctv/1966",
-      "is_video_auth_required": true
+      }
     },
     {
       "id": "1967",
@@ -28311,7 +28291,7 @@
           }
         },
         "linkId1": "892031737F",
-        "linkId2": "1162291835T",
+        "linkId2": null,
         "created": "2024-12-12T16:12:05.3988357+00:00",
         "lastUpdated": null,
         "lastEditedBy": null,
@@ -28536,7 +28516,7 @@
           }
         },
         "linkId1": "1163040532F",
-        "linkId2": "1163040530T",
+        "linkId2": null,
         "created": "2024-12-12T16:12:05.3988357+00:00",
         "lastUpdated": null,
         "lastEditedBy": null,
@@ -28911,7 +28891,7 @@
           }
         },
         "linkId1": "1328859561F",
-        "linkId2": "1329075487T",
+        "linkId2": null,
         "created": "2024-12-12T16:12:05.4845249+00:00",
         "lastUpdated": null,
         "lastEditedBy": null,
@@ -29635,8 +29615,7 @@
             "description": "0481-CCTV",
             "imageUrl": "/map/Cctv/2048",
             "imageType": 0,
-            "videoUrl": "https://dis-se18.divas.cloud:8200/chan-9864_h/index.m3u8",
-            "videoType": "application/x-mpegURL",
+            "videoUrl": "",
             "isVideoAuthRequired": true,
             "videoDisabled": false,
             "disabled": false,
@@ -29661,7 +29640,7 @@
           }
         },
         "linkId1": "16996437F",
-        "linkId2": null,
+        "linkId2": "16996439T",
         "created": "2024-12-12T16:12:05.4845249+00:00",
         "lastUpdated": null,
         "lastEditedBy": null,
@@ -29676,10 +29655,7 @@
         "city": null,
         "dotDistrict": "District 4",
         "country": "United States"
-      },
-      "video_url": "https://dis-se18.divas.cloud:8200/chan-9864_h/index.m3u8",
-      "thumbnail_url": "https://fl511.com/map/Cctv/2048",
-      "is_video_auth_required": true
+      }
     },
     {
       "id": "2049",
@@ -35866,7 +35842,7 @@
           }
         },
         "linkId1": "1159347936F",
-        "linkId2": null,
+        "linkId2": "1159181766T",
         "created": "2024-12-12T16:12:05.4845249+00:00",
         "lastUpdated": null,
         "lastEditedBy": null,
@@ -40099,8 +40075,7 @@
             "description": "2270_I-95_NB_MM_266.0",
             "imageUrl": "/map/Cctv/1049",
             "imageType": 0,
-            "videoUrl": "https://dis-se16.divas.cloud:8200/chan-9374_h/index.m3u8",
-            "videoType": "application/x-mpegURL",
+            "videoUrl": "",
             "isVideoAuthRequired": true,
             "videoDisabled": false,
             "disabled": false,
@@ -40140,10 +40115,7 @@
         "city": null,
         "dotDistrict": "District 5",
         "country": "United States"
-      },
-      "video_url": "https://dis-se16.divas.cloud:8200/chan-9374_h/index.m3u8",
-      "thumbnail_url": "https://fl511.com/map/Cctv/1049",
-      "is_video_auth_required": true
+      }
     },
     {
       "id": "1050",

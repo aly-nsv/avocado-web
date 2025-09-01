@@ -2,11 +2,11 @@
 """
 Pre-fetch FL511 Video Authentication Responses
 
-Fetches video auth responses for all I-4 and I-95 cameras and caches them
+Fetches video auth responses for all I-4, I-95, and I-10 cameras and caches them
 to avoid rate limiting during continuous capture operations.
 
 This script:
-1. Loads all I-4/I-95 cameras from fl511_i4_i95_cameras.json
+1. Loads all I-4/I-95/I-10 cameras from fl511_i4_i95_i10_cameras.json
 2. Calls https://fl511.com/Camera/GetVideoUrl for each camera with delays
 3. Saves responses to fl511_video_auth_cache.json
 4. Handles failures gracefully with retries
@@ -25,7 +25,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 logger = logging.getLogger(__name__)
 
 class FL511VideoAuthCache:
-    def __init__(self, cameras_json_path: str = 'fl511_i4_i95_cameras.json'):
+    def __init__(self, cameras_json_path: str = 'fl511_i4_i95_i10_cameras.json'):
         self.cameras_json_path = cameras_json_path
         self.cache_file_path = 'fl511_video_auth_cache.json'
         self.session = requests.Session()
@@ -57,12 +57,12 @@ class FL511VideoAuthCache:
             # Handle metadata wrapper format
             cameras_list = data.get('cameras', data) if isinstance(data, dict) else data
             
-            # Extract I-4 and I-95 cameras with video auth
+            # Extract I-4, I-95, and I-10 cameras with video auth
             target_cameras = []
             for camera in cameras_list:
                 if (camera.get('is_video_auth_required') and 
                     camera.get('video_url') and
-                    camera.get('roadway') in ['I-4', 'I-95']):
+                    camera.get('roadway') in ['I-4', 'I-95', 'I-10']):
                     
                     # Extract image_id for API calls
                     image_id = camera.get('id')
@@ -82,7 +82,7 @@ class FL511VideoAuthCache:
                         'longitude': camera.get('longitude')
                     })
             
-            logger.info(f"Loaded {len(target_cameras)} I-4/I-95 cameras requiring video auth")
+            logger.info(f"Loaded {len(target_cameras)} I-4/I-95/I-10 cameras requiring video auth")
             return target_cameras
             
         except Exception as e:
@@ -311,7 +311,7 @@ def main():
     parser.add_argument('--delay', type=float, default=4.0, help='Delay between requests (seconds)')
     parser.add_argument('--batch-size', type=int, default=5, help='Cameras per batch')
     parser.add_argument('--update', action='store_true', help='Update existing cache instead of full rebuild')
-    parser.add_argument('--cameras-file', default='fl511_i4_i95_cameras.json', help='Camera data file')
+    parser.add_argument('--cameras-file', default='fl511_i4_i95_i10_cameras.json', help='Camera data file')
     
     args = parser.parse_args()
     
