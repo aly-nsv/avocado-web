@@ -495,5 +495,10 @@ def main():
     return 0
 
 
+    def get_video_stream_info(self, camera_id: str) -> Optional[Dict]:
+        """Compatibility method - calls get_authenticated_stream_info"""
+        return self.get_authenticated_stream_info(camera_id)
+
+
 if __name__ == "__main__":
     exit(main())

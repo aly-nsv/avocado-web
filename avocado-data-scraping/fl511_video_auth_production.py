@@ -32,7 +32,7 @@ requests.packages.urllib3.disable_warnings()
 
 
 class FL511VideoAuthProduction:
-    def __init__(self, cameras_json_path: str = 'fl511_i4_i95_cameras.json'):
+    def __init__(self, cameras_json_path: str = 'fl511_cameras_all_regions.json'):
         """Initialize with camera data from JSON file"""
         self.cameras_json_path = cameras_json_path
         self.session = requests.Session()
@@ -97,6 +97,7 @@ class FL511VideoAuthProduction:
             
             # Handle new format with metadata wrapper
             cameras_list = data.get('cameras', data) if isinstance(data, dict) else data
+            print(f"Loaded {len(cameras_list)} cameras from JSON")
             
             # Extract cameras with video auth required
             auth_cameras = []
@@ -425,6 +426,80 @@ class FL511VideoAuthProduction:
         
         logger.info("=" * 60)
         logger.info("✅ Authentication flow completed successfully!")
+        logger.info(f"📺 Streaming URL: {result['streaming_url']}")
+        logger.info(f"🎬 Available segments: {len(result['segments'])}")
+        logger.info("=" * 60)
+        
+        return result
+
+    def authenticate_camera_with_data(self, camera_data: Dict) -> Optional[Dict]:
+        """
+        Authenticate any camera given its data directly (for dynamic cameras)
+        
+        Args:
+            camera_data: Camera data with video_url, camera_id, and raw_camera_data
+            
+        Returns:
+            Dict with complete streaming information or None if failed
+        """
+        camera_id = camera_data.get('camera_id', 'unknown')
+        video_url = camera_data.get('video_url')
+        raw_data = camera_data.get('raw_camera_data', {})
+        
+        if not video_url:
+            logger.error(f"❌ No video URL provided for camera {camera_id}")
+            return None
+        
+        logger.info("=" * 60)
+        logger.info(f"FL-511 Video Authentication Flow - Dynamic Camera {camera_id}")
+        logger.info("=" * 60)
+        
+        logger.info(f"📹 Camera: {camera_data.get('description', 'Unknown')}")
+        logger.info(f"📍 Location: {camera_data.get('roadway', '')} {camera_data.get('direction', '')}")
+        logger.info(f"🔗 Base Video URL: {video_url}")
+        
+        # Extract image_id from raw camera data
+        image_id = camera_id  # Default fallback
+        if raw_data.get('images'):
+            first_image = raw_data['images'][0]
+            image_id = str(first_image.get('id', camera_id))
+        
+        logger.info(f"🔍 Using image_id: {image_id}")
+        
+        # Step 1: Get authentication info using image_id
+        auth_info = self.step1_get_video_auth_info(image_id)
+        if not auth_info:
+            return None
+        
+        # Step 2: Get streaming token
+        streaming_token = self.step2_get_streaming_token(auth_info)
+        if not streaming_token:
+            return None
+        
+        # Step 3: Get master playlist
+        master_playlist = self.step3_get_master_playlist(video_url, streaming_token)
+        if not master_playlist:
+            return None
+        
+        # Step 4: Get video playlist with segments
+        video_playlist_info = self.step4_get_video_playlist(video_url, streaming_token)
+        if not video_playlist_info:
+            return None
+        
+        # Combine all information
+        result = {
+            'camera_id': camera_id,
+            'camera_info': camera_data,  # Use the provided camera data
+            'auth_info': auth_info,
+            'streaming_token': streaming_token,
+            'master_playlist': master_playlist,
+            'video_playlist_info': video_playlist_info,
+            'streaming_url': video_playlist_info['playlist_url'],
+            'segments': video_playlist_info['segments']
+        }
+        
+        logger.info("=" * 60)
+        logger.info("✅ Dynamic camera authentication completed successfully!")
         logger.info(f"📺 Streaming URL: {result['streaming_url']}")
         logger.info(f"🎬 Available segments: {len(result['segments'])}")
         logger.info("=" * 60)
