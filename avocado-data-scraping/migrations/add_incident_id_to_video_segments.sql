@@ -3,3 +3,7 @@
 
 ALTER TABLE video_segments 
 ADD COLUMN incident_id INTEGER REFERENCES incidents(incident_id);
+
+ALTER TABLE video_segments 
+ADD COLUMN
+  avocado_version TEXT;

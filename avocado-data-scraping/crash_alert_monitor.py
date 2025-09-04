@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 """
-FL-511 Crash Alert Monitor
+FL-511 Incident Monitor
 
-Continuously monitors FL-511 incidents for crashes and triggers immediate video capture
-from nearby cameras when crash incidents are detected.
+Continuously monitors FL-511 incidents and triggers immediate video capture
+from nearby cameras when incidents are detected.
 
 This module:
 1. Polls FL-511 incidents API every 5 seconds
-2. Detects new crash-related incidents (case-insensitive "crash" detection)
-3. Finds cameras near crash locations
+2. Detects new incidents of all types
+3. Finds cameras associated with incident locations
 4. Triggers immediate 5-minute video capture from those cameras
 5. Stores incident and video metadata in database
 """
@@ -25,7 +25,6 @@ from google.cloud import storage
 # Import existing modules
 from fl511_scraper import FL511Scraper, TrafficIncident
 from fl511_video_auth_production import FL511VideoAuthProduction
-from fl511_camera_search import FL511CameraSearch
 import requests
 import urllib.parse
 
@@ -34,39 +33,38 @@ logging.basicConfig(
     level=logging.INFO, 
     format='%(asctime)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler('crash_alert_monitor.log'),
+        logging.FileHandler('incident_monitor.log'),
         logging.StreamHandler()
     ]
 )
 logger = logging.getLogger(__name__)
 
 
-class CrashAlertMonitor:
-    """Monitor for crash incidents and trigger video capture"""
+class IncidentMonitor:
+    """Monitor for incidents and trigger video capture"""
     
     def __init__(self, 
                  poll_interval: int = 5,
                  video_capture_duration: int = 300,  # 5 minutes in seconds
-                 max_cameras_per_crash: int = 5,
+                 max_cameras_per_incident: int = 5,
                  gcs_bucket: str = 'avocado-fl511-video-fl511-video-segments'):
         """
-        Initialize crash alert monitor
+        Initialize incident monitor
         
         Args:
             poll_interval: Seconds between incident polls
-            video_capture_duration: Seconds to capture video after crash detected
-            max_cameras_per_crash: Maximum cameras to capture per crash incident
+            video_capture_duration: Seconds to capture video after incident detected
+            max_cameras_per_incident: Maximum cameras to capture per incident
             gcs_bucket: GCS bucket for video storage
         """
         self.poll_interval = poll_interval
         self.video_capture_duration = video_capture_duration
-        self.max_cameras_per_crash = max_cameras_per_crash
+        self.max_cameras_per_incident = max_cameras_per_incident
         self.gcs_bucket = gcs_bucket
         
         # Initialize services
         self.incident_scraper = FL511Scraper()
         self.video_auth = FL511VideoAuthProduction()
-        self.camera_search = FL511CameraSearch()
         
         # Database config
         self.db_config = {
@@ -93,10 +91,11 @@ class CrashAlertMonitor:
         # Load existing incident IDs from database on startup
         self._load_existing_incident_ids()
         
-        logger.info("🚨 Crash Alert Monitor initialized")
+        logger.info("🚨 Incident Monitor initialized")
         logger.info(f"   Poll interval: {poll_interval} seconds")
         logger.info(f"   Video capture duration: {video_capture_duration/60:.1f} minutes")
-        logger.info(f"   Max cameras per crash: {max_cameras_per_crash}")
+        logger.info(f"   Max cameras per incident: {max_cameras_per_incident}")
+        logger.info("   📹 CAMERA MODE: Using incident-associated cameras directly (no search required!)")
         logger.info("   🔑 AUTH MODE: Dynamic camera authentication with fresh FL-511 API calls")
     
 
@@ -112,8 +111,8 @@ class CrashAlertMonitor:
             
             # Add all existing incident IDs to the processed set
             for (incident_id,) in existing_ids:
-                # self.processed_incidents.add(incident_id)
-                print(incident_id)
+                self.processed_incidents.add(incident_id)
+                # print(incident_id)
             
             conn.close()
             
@@ -123,85 +122,63 @@ class CrashAlertMonitor:
             logger.error(f"❌ Failed to load existing incident IDs: {e}")
             # Continue with empty set if database load fails
     
-    def is_crash_incident(self, incident: TrafficIncident) -> bool:
-        """
-        Check if incident is crash-related (case-insensitive)
-        
-        Args:
-            incident: Traffic incident to check
-            
-        Returns:
-            True if incident contains "crash" in type or description
-        """
-        crash_keywords = ['crash', 'accident', 'collision', 'wreck']
-        
-        # Check incident type
-        incident_type = incident.incident_type.lower()
-        if any(keyword in incident_type for keyword in crash_keywords):
-            return True
-        
-        # Check description
-        description = incident.description.lower()
-        if any(keyword in description for keyword in crash_keywords):
-            return True
-        
-        return False
     
-    def find_nearby_cameras(self, incident: TrafficIncident) -> List[Dict]:
+    def get_incident_cameras(self, incident: TrafficIncident) -> List[Dict]:
         """
-        Find cameras near the incident location using FL511 Camera Search API
+        Get cameras directly from the incident data (much simpler!)
         
         Args:
-            incident: Traffic incident
+            incident: Traffic incident with associated cameras
             
         Returns:
-            List of nearby camera metadata with video URLs and relevance scoring
+            List of camera metadata from the incident itself
         """
-        # Convert TrafficIncident to dict format for camera search
-        incident_data = {
-            'id': incident.id,
-            'roadwayName': incident.roadway_name,
-            'description': incident.description,
-            'county': incident.county,
-            'region': incident.region,
-            'direction': incident.direction
-        }
+        if not incident.cameras:
+            logger.warning(f"🚫 No cameras associated with incident {incident.id}")
+            return []
         
-        # Use FL511 Camera Search API to find relevant cameras
-        cameras = self.camera_search.search_cameras_for_incident(incident_data)
-        
-        # Convert camera search results to format expected by video capture
         formatted_cameras = []
-        for camera in cameras[:self.max_cameras_per_crash]:
-            # Extract camera data from search results
-            formatted_camera = {
-                'camera_id': camera['camera_id'],
-                'video_url': camera['video_url'], 
-                'description': camera['description'],
-                'roadway': camera['roadway'],
-                'region': camera['region'],
-                'county': camera['county'],
-                'direction': camera['direction'],
-                'coordinates': camera['coordinates'],
-                'relevance_score': camera['relevance_score'],
-                # Include raw camera data for video auth if needed
-                'raw_camera_data': camera.get('raw_camera_data', {})
-            }
-            formatted_cameras.append(formatted_camera)
+        for camera in incident.cameras[:self.max_cameras_per_incident]:
+            # Extract video URLs from camera images
+            video_cameras = []
+            
+            if camera.images:
+                for image in camera.images:
+                    if image.video_url:  # Only include cameras with video
+                        video_camera = {
+                            'camera_id': str(image.id),
+                            'image_id': str(image.id),
+                            'camera_site_id': str(image.camera_site_id),
+                            'video_url': image.video_url,
+                            'description': image.description,
+                            'location': camera.location,
+                            'is_video_auth_required': image.is_video_auth_required,
+                            'video_type': image.video_type,
+                            'relevance_score': 10.0,  # Perfect relevance - it's directly associated!
+                            'raw_camera_data': {
+                                'id': image.id,
+                                'images': [{'id': image.id, 'videoUrl': image.video_url}]
+                            }
+                        }
+                        video_cameras.append(video_camera)
+            
+            formatted_cameras.extend(video_cameras)
         
-        logger.info(f"📍 Camera search found {len(formatted_cameras)} relevant cameras")
+        logger.info(f"📹 Found {len(formatted_cameras)} cameras directly associated with incident {incident.id}")
         for i, cam in enumerate(formatted_cameras, 1):
-            logger.info(f"   {i}. Camera {cam['camera_id']} (Score: {cam['relevance_score']:.1f}) - {cam['description']}")
+            logger.info(f"   {i}. Camera {cam['camera_id']} - {cam['description']}")
+            logger.info(f"      Video URL: {cam['video_url']}")
+            logger.info(f"      Auth Required: {cam['is_video_auth_required']}")
         
         return formatted_cameras
     
 
-    def capture_crash_video(self, incident: TrafficIncident, cameras: List[Dict]) -> Dict:
+    def capture_incident_video(self, incident: TrafficIncident, cameras: List[Dict]) -> Dict:
         """
-        Capture video from cameras for crash incident
+        Capture video from cameras for incident
         
         Args:
-            incident: Crash incident
+            incident: Traffic incident
             cameras: List of camera metadata
             
         Returns:
@@ -218,7 +195,7 @@ class CrashAlertMonitor:
             'total_size_bytes': 0
         }
         
-        logger.info(f"🎬 Starting crash video capture for incident {incident.id}")
+        logger.info(f"🎬 Starting incident video capture for incident {incident.id}")
         logger.info(f"   Incident: {incident.description[:100]}...")
         logger.info(f"   Location: {incident.roadway_name}, {incident.region}")
         logger.info(f"   Cameras: {len(cameras)}")
@@ -342,7 +319,7 @@ class CrashAlertMonitor:
         capture_results['capture_end'] = capture_end.isoformat()
         capture_results['capture_duration_seconds'] = (capture_end - capture_start).total_seconds()
         
-        logger.info(f"🎯 Crash video capture complete for incident {incident.id}")
+        logger.info(f"🎯 Incident video capture complete for incident {incident.id}")
         logger.info(f"   Duration: {capture_results['capture_duration_seconds']:.1f}s")
         logger.info(f"   Successful cameras: {capture_results['cameras_successful']}")
         logger.info(f"   Total segments: {len(capture_results['video_segments'])}")
@@ -350,17 +327,18 @@ class CrashAlertMonitor:
         
         return capture_results
     
-    def store_crash_incident(self, incident: TrafficIncident, video_results: Dict):
+    def store_incident(self, incident: TrafficIncident, video_results: Dict):
         """
-        Store crash incident and video metadata in database
+        Store incident and video metadata in database
         
         Args:
-            incident: Crash incident
+            incident: Traffic incident
             video_results: Video capture results
         """
         try:
             conn = psycopg2.connect(**self.db_config)
             cur = conn.cursor()
+            timestamp = str(datetime.now().isoformat())
             
             # Insert incident
             cur.execute('''
@@ -403,8 +381,8 @@ class CrashAlertMonitor:
                         (camera_id, segment_filename, storage_bucket, storage_path, storage_url,
                          segment_duration, segment_size_bytes, segment_index, capture_timestamp,
                          camera_latitude, camera_longitude, camera_roadway, camera_region, camera_county,
-                         incident_id)
-                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                         incident_id, avocado_version)
+                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                         ON CONFLICT (camera_id, segment_filename) DO NOTHING
                     ''', (
                         camera_id,
@@ -420,7 +398,8 @@ class CrashAlertMonitor:
                         incident.roadway_name,
                         incident.region,
                         incident.county,
-                        incident.id  # incident_id for correlation
+                        incident.id,  # incident_id for correlation
+                        f'direct_camera_{timestamp}'  # avocado_version
                     ))
                     logger.info(f"✅ Successfully inserted segment {segment['filename']} for camera {camera_id}")
                 except Exception as segment_error:
@@ -430,17 +409,17 @@ class CrashAlertMonitor:
             conn.commit()
             conn.close()
             
-            logger.info(f"💾 Stored crash incident {incident.id} and {len(video_results['video_segments'])} video segments in database")
+            logger.info(f"💾 Stored incident {incident.id} and {len(video_results['video_segments'])} video segments in database")
             
         except Exception as e:
-            logger.error(f"❌ Failed to store crash incident {incident.id} in database: {e}")
+            logger.error(f"❌ Failed to store incident {incident.id} in database: {e}")
     
     def poll_incidents(self) -> List[TrafficIncident]:
         """
         Poll FL-511 for new incidents using pagination to get all incidents
         
         Returns:
-            List of new crash incidents
+            List of new incidents
         """
         try:
             # Fetch ALL incidents using pagination (no page limit)
@@ -451,8 +430,8 @@ class CrashAlertMonitor:
             
             logger.info(f"📊 Retrieved {len(incidents)} total incidents from FL-511")
             
-            # Filter to new crash incidents only (no time filtering)
-            new_crash_incidents = []
+            # Filter to new incidents only (no time filtering)
+            new_incidents = []
             skipped_existing = 0
             
             for incident in incidents:
@@ -460,24 +439,21 @@ class CrashAlertMonitor:
                     skipped_existing += 1
                     continue
                     
-                if self.is_crash_incident(incident):
-                    new_crash_incidents.append(incident)
-                    self.processed_incidents.add(incident.id)
-                else:
-                    # Still mark non-crash incidents as processed to avoid checking them again
-                    self.processed_incidents.add(incident.id)
+                # Process all incidents, not just crashes
+                new_incidents.append(incident)
+                self.processed_incidents.add(incident.id)
             
             logger.info(f"📈 Processing summary:")
             logger.info(f"   Total incidents: {len(incidents)}")
             logger.info(f"   Already processed: {skipped_existing}")
-            logger.info(f"   New crashes found: {len(new_crash_incidents)}")
+            logger.info(f"   New incidents found: {len(new_incidents)}")
             
-            if new_crash_incidents:
-                logger.info(f"🚨 NEW CRASH INCIDENTS:")
-                for incident in new_crash_incidents:
+            if new_incidents:
+                logger.info(f"🚨 NEW INCIDENTS:")
+                for incident in new_incidents:
                     logger.info(f"   {incident.id}: {incident.description[:100]}...")
             
-            return new_crash_incidents
+            return new_incidents
             
         except Exception as e:
             logger.error(f"❌ Error polling incidents: {e}")
@@ -487,42 +463,42 @@ class CrashAlertMonitor:
         """
         Main monitoring loop - runs continuously until interrupted
         """
-        logger.info("🚨 Starting FL-511 Crash Alert Monitor")
-        logger.info(f"   Monitoring for crashes every {self.poll_interval} seconds")
+        logger.info("🚨 Starting FL-511 Incident Monitor")
+        logger.info(f"   Monitoring for incidents every {self.poll_interval} seconds")
         logger.info("   Press Ctrl+C to stop")
         
         try:
             while True:
                 loop_start = time.time()
                 
-                # Poll for new crash incidents
-                crash_incidents = self.poll_incidents()
+                # Poll for new incidents
+                new_incidents = self.poll_incidents()
                 
-                # Process each new crash
-                for incident in crash_incidents:
+                # Process each new incident
+                for incident in new_incidents:
                     try:
-                        logger.info(f"🚨 CRASH DETECTED: {incident.id}")
+                        logger.info(f"🚨 INCIDENT DETECTED: {incident.id}")
                         logger.info(f"   Description: {incident.description}")
                         logger.info(f"   Location: {incident.roadway_name}, {incident.region}")
                         
-                        # Find nearby cameras
-                        cameras = self.find_nearby_cameras(incident)
+                        # Get cameras directly from incident data (much better!)
+                        cameras = self.get_incident_cameras(incident)
                         if not cameras:
-                            logger.warning(f"❌ No cameras found near crash {incident.id}")
+                            logger.warning(f"❌ No cameras associated with incident {incident.id}")
                             continue
                         
-                        logger.info(f"📹 Found {len(cameras)} cameras near crash location")
+                        logger.info(f"📹 Found {len(cameras)} cameras near incident location")
                         
                         # Capture video from nearby cameras
-                        video_results = self.capture_crash_video(incident, cameras)
+                        video_results = self.capture_incident_video(incident, cameras)
                         
                         # Store incident and video metadata
-                        self.store_crash_incident(incident, video_results)
+                        self.store_incident(incident, video_results)
                         
-                        logger.info(f"✅ Crash {incident.id} processing complete")
+                        logger.info(f"✅ Incident {incident.id} processing complete")
                         
                     except Exception as e:
-                        logger.error(f"❌ Error processing crash {incident.id}: {e}")
+                        logger.error(f"❌ Error processing incident {incident.id}: {e}")
                 
                 # Wait for next poll (accounting for processing time)
                 loop_duration = time.time() - loop_start
@@ -531,29 +507,29 @@ class CrashAlertMonitor:
                     time.sleep(sleep_time)
                 
         except KeyboardInterrupt:
-            logger.info("🛑 Crash Alert Monitor stopped by user")
+            logger.info("🛑 Incident Monitor stopped by user")
         except Exception as e:
-            logger.error(f"💥 Crash Alert Monitor crashed: {e}")
+            logger.error(f"💥 Incident Monitor crashed: {e}")
             raise
 
 
 def main():
-    """Run the crash alert monitor"""
+    """Run the incident monitor"""
     import argparse
     
-    parser = argparse.ArgumentParser(description='FL-511 Crash Alert Monitor')
+    parser = argparse.ArgumentParser(description='FL-511 Incident Monitor')
     parser.add_argument('--poll-interval', type=int, default=5, help='Seconds between polls')
     parser.add_argument('--capture-duration', type=int, default=300, help='Video capture duration in seconds')
-    parser.add_argument('--max-cameras', type=int, default=5, help='Max cameras per crash')
+    parser.add_argument('--max-cameras', type=int, default=5, help='Max cameras per incident')
     parser.add_argument('--gcs-bucket', default='avocado-fl511-video-fl511-video-segments', help='GCS bucket for videos')
     
     args = parser.parse_args()
     
     # Create and run monitor
-    monitor = CrashAlertMonitor(
+    monitor = IncidentMonitor(
         poll_interval=args.poll_interval,
         video_capture_duration=args.capture_duration,
-        max_cameras_per_crash=args.max_cameras,
+        max_cameras_per_incident=args.max_cameras,
         gcs_bucket=args.gcs_bucket
     )
     
