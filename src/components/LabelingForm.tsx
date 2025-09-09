@@ -448,8 +448,8 @@ export function LabelingForm({
   }
 
   return (
-    <Card className="h-fit">
-      <CardHeader>
+    <Card className="h-full flex flex-col">
+      <CardHeader className="flex-shrink-0">
         <CardTitle className="flex items-center justify-between">
           <span>Labeling Process</span>
           <Badge variant="outline" className="text-xs">
@@ -458,12 +458,14 @@ export function LabelingForm({
         </CardTitle>
       </CardHeader>
       
-      <CardContent className="space-y-6">
+      <CardContent className="flex-1 flex flex-col space-y-6">
         {/* Current Step Content */}
-        {renderCurrentStep()}
+        <div className="flex-1 overflow-y-auto">
+          {renderCurrentStep()}
+        </div>
 
         {/* Navigation Buttons */}
-        <div className="flex justify-between pt-4 border-t">
+        <div className="flex justify-between pt-4 border-t flex-shrink-0">
           <Button
             variant="outline"
             onClick={handlePreviousStep}
