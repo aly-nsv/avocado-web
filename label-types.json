@@ -1,0 +1,317 @@
+{
+  "incidents": [
+    {
+      "label_type": "collision",
+      "category": "Collision",
+      "priority": 1,
+      "description": "Two or more vehicles, or vehicle and object/pedestrian, collide; includes rear-end, sideswipe, etc.",
+      "modality": "Image & Video",
+      "examples": "Crashed vehicles, deployed airbags, debris scattered; sudden stop on video; vehicles at odd angles",
+      "question_text": "Do you see a collision in this video stream?"
+    },
+    {
+      "label_type": "stationary_vehicle",
+      "category": "Stationary Vehicle",
+      "priority": 1,
+      "description": "Any vehicle stopped in a lane (not at intersection or for traffic control); can be breakdown or crash",
+      "modality": "Image & Video",
+      "examples": "Car stopped in travel lane with hazard lights, bus stopped out of bus stop, truck blocking lane",
+      "question_text": "Do you see a stationary vehicle in this video stream?"
+    },
+    {
+      "label_type": "impediment",
+      "category": "Impediment",
+      "priority": 1,
+      "description": "Anything that blocks or significantly impedes one or more travel lanes",
+      "modality": "Image",
+      "examples": "Large debris, stalled vehicles, roadwork equipment left on road",
+      "question_text": "Do you see an impediment blocking traffic in this video stream?"
+    },
+    {
+      "label_type": "vru_incident",
+      "category": "VRU Incident",
+      "priority": 1,
+      "description": "Incident involving a vulnerable road user (pedestrian, cyclist, motorcyclist); at risk of injury",
+      "modality": "Image & Video",
+      "examples": "Pedestrian in crosswalk struck by car, cyclist falls, motorcycle rear-ended",
+      "question_text": "Do you see a vulnerable road user incident (pedestrian, cyclist, motorcyclist) in this video stream?"
+    },
+    {
+      "label_type": "fod_hazardous_material",
+      "category": "FOD – Hazardous Material",
+      "priority": 1,
+      "description": "Presence of chemical spill, leaking fluids, or hazardous objects requiring special response",
+      "modality": "Image & Video",
+      "examples": "Liquid pooling on roadway from tanker crash, chemical barrels, visible spill warning signage",
+      "question_text": "Do you see hazardous materials or spills in this video stream?"
+    },
+    {
+      "label_type": "fod_generic_debris",
+      "category": "FOD – Generic Debris",
+      "priority": 1,
+      "description": "Non-hazardous debris that can cause a crash or impede flow; not roadwork/cones",
+      "modality": "Image",
+      "examples": "Tire fragments, furniture, tree branches, boxes on road",
+      "question_text": "Do you see debris on the roadway in this video stream?"
+    },
+    {
+      "label_type": "fatal",
+      "category": "Fatal",
+      "priority": 1,
+      "description": "Incident confirmed or highly likely to involve a fatality (usually inferred from scene severity)",
+      "modality": "Image & Video",
+      "examples": "Covered body, significant vehicle damage, emergency response with coroner, tarps",
+      "question_text": "Do you see indicators of a fatal incident in this video stream?"
+    },
+    {
+      "label_type": "roadway_departure",
+      "category": "Roadway Departure",
+      "priority": 1,
+      "description": "Vehicle leaves roadway, enters shoulder, ditch, or hits barrier/embankment",
+      "modality": "Video",
+      "examples": "Vehicle veering off pavement, car found in ditch, tire tracks off-road",
+      "question_text": "Do you see a vehicle departing from the roadway in this video stream?"
+    },
+    {
+      "label_type": "queue_present",
+      "category": "Queue Present",
+      "priority": 2,
+      "description": "A visible, sustained line of slow/stopped vehicles, not normal congestion",
+      "modality": "Video",
+      "examples": "Long backup from crash site, stopped cars beyond typical rush hour",
+      "question_text": "Do you see a queue of stopped/slow vehicles in this video stream?"
+    },
+    {
+      "label_type": "congestion",
+      "category": "Congestion",
+      "priority": 2,
+      "description": "Abnormal, sustained reduction in speed/flow; may not have clear blockage",
+      "modality": "Video",
+      "examples": "Heavy, slow-moving traffic upstream of incident, gridlock",
+      "question_text": "Do you see traffic congestion in this video stream?"
+    },
+    {
+      "label_type": "harsh_braking",
+      "category": "Harsh Braking",
+      "priority": 2,
+      "description": "One or more vehicles stop abruptly in short distance (may be near-miss indicator)",
+      "modality": "Video",
+      "examples": "Brake lights suddenly on, following vehicles close behind, tire smoke",
+      "question_text": "Do you see harsh braking by vehicles in this video stream?"
+    },
+    {
+      "label_type": "swerving",
+      "category": "Swerving",
+      "priority": 2,
+      "description": "Sudden or erratic lateral movement by vehicle(s)",
+      "modality": "Video",
+      "examples": "Car quickly changing lanes to avoid debris, over-correction after drift",
+      "question_text": "Do you see vehicles swerving in this video stream?"
+    },
+    {
+      "label_type": "duration_based_severity",
+      "category": "Duration-Based Severity",
+      "priority": 2,
+      "description": "Incident classified by length of time it impacts roadway (minor <30min, intermediate, major >2hr)",
+      "modality": "Video",
+      "examples": "Persistent queue/congestion, stalled vehicle present for extended period",
+      "question_text": "Does this incident appear to have lasted an extended period based on the video?"
+    },
+    {
+      "label_type": "cmv_involved",
+      "category": "CMV Involved",
+      "priority": 2,
+      "description": "Commercial Motor Vehicle (truck, bus, etc.) is involved in or causes the incident",
+      "modality": "Image",
+      "examples": "Semi-truck in crash, bus blocking intersection, delivery truck with hazards",
+      "question_text": "Do you see a commercial vehicle involved in this incident in the video stream?"
+    },
+    {
+      "label_type": "speeding",
+      "category": "Speeding",
+      "priority": 3,
+      "description": "Vehicle traveling substantially above posted or typical speed limit",
+      "modality": "Video",
+      "examples": "Car overtaking others at high speed, rapid acceleration through intersection",
+      "question_text": "Do you see vehicles traveling at excessive speeds in this video stream?"
+    }
+  ],
+  "actors": [
+    {
+      "label_type": "passenger_vehicle",
+      "category": "Passenger Vehicle (Car/Small Vehicle)",
+      "priority": 1,
+      "description": "Typical personal vehicles: sedans, hatchbacks, coupes, small SUVs. Basis class for most scenes.",
+      "modality": "Image",
+      "examples": "Sedan/SUV traveling in lane; parked shoulder vehicle; compact car in queue.",
+      "question_text": "Do you see passenger vehicles (cars, SUVs) in this video stream?"
+    },
+    {
+      "label_type": "commercial_vehicle",
+      "category": "Commercial Vehicle (CMV)",
+      "priority": 1,
+      "description": "Medium/heavy-duty vehicles used for commerce: delivery vans, box trucks, semi tractors, with/without trailer.",
+      "modality": "Image",
+      "examples": "18-wheeler in right lane; box truck double-parked; step-van at curb.",
+      "question_text": "Do you see commercial vehicles (trucks, delivery vans) in this video stream?"
+    },
+    {
+      "label_type": "emergency_vehicle",
+      "category": "Emergency Vehicle",
+      "priority": 1,
+      "description": "Police, fire, ambulance; identifiable by livery, light bars, reflective striping; lights may be active.",
+      "modality": "Image",
+      "examples": "Ambulance with flashing lights; fire engine across lanes; police SUV on shoulder.",
+      "question_text": "Do you see emergency vehicles (police, fire, ambulance) in this video stream?"
+    },
+    {
+      "label_type": "motorcycle",
+      "category": "Motorcycle",
+      "priority": 1,
+      "description": "Two/three-wheeled motorized vehicles; rider posture and wheelbase profile distinguishable from bicycles.",
+      "modality": "Image",
+      "examples": "Sport bike splitting lanes; cruiser at intersection; scooter in traffic.",
+      "question_text": "Do you see motorcycles in this video stream?"
+    },
+    {
+      "label_type": "pedestrian",
+      "category": "Pedestrian",
+      "priority": 1,
+      "description": "Person on foot in or adjacent to roadway (sidewalk, shoulder, median, crosswalk).",
+      "modality": "Image",
+      "examples": "Pedestrian in crosswalk; person stepping off curb; worker walking in lane.",
+      "question_text": "Do you see pedestrians in this video stream?"
+    },
+    {
+      "label_type": "debris_generic",
+      "category": "Debris (Generic)",
+      "priority": 1,
+      "description": "Non-vehicle objects large enough to create a hazard or impede traffic.",
+      "modality": "Image",
+      "examples": "Ladder/furniture in lane; fallen tree branch; pallet/box debris.",
+      "question_text": "Do you see debris on the roadway in this video stream?"
+    },
+    {
+      "label_type": "hazmat_presence",
+      "category": "Hazardous Material (HAZMAT presence)",
+      "priority": 1,
+      "description": "Containers/placards or visible liquid/particulate suggesting hazardous materials; may indicate elevated response.",
+      "modality": "Image & Video",
+      "examples": "Tanker with HAZMAT placard; visible leaking fluid pooling; drum with warning labels.",
+      "question_text": "Do you see hazardous materials indicators in this video stream?"
+    },
+    {
+      "label_type": "disabled_vehicle",
+      "category": "Disabled Vehicle",
+      "priority": 1,
+      "description": "Vehicle apparently inoperable or broken down (often partially/fully impeding).",
+      "modality": "Image & Video",
+      "examples": "Car with hood up/hazards blinking; triangle/cone behind vehicle; driver standing by on shoulder.",
+      "question_text": "Do you see disabled vehicles in this video stream?"
+    },
+    {
+      "label_type": "bus",
+      "category": "Bus",
+      "priority": 2,
+      "description": "Transit, school, or coach buses with distinctive length/door/window patterns and liveries.",
+      "modality": "Image",
+      "examples": "City bus at stop blocking a lane; school bus with stop arm; coach bus at terminal.",
+      "question_text": "Do you see buses in this video stream?"
+    },
+    {
+      "label_type": "bicycle",
+      "category": "Bicycle",
+      "priority": 2,
+      "description": "Pedal or e-bikes operated in roadway/shoulder/bike lane; rider + frame silhouette.",
+      "modality": "Image",
+      "examples": "Cyclist in bike lane; e-bike entering crosswalk; group ride near curb.",
+      "question_text": "Do you see bicycles or cyclists in this video stream?"
+    },
+    {
+      "label_type": "trailer",
+      "category": "Trailer",
+      "priority": 2,
+      "description": "Towed units (utility, flatbed, boat, box) attached to or separated from a tractor/vehicle.",
+      "modality": "Image",
+      "examples": "Pickup with utility trailer; detached flatbed in lane; boat trailer backing.",
+      "question_text": "Do you see trailers in this video stream?"
+    },
+    {
+      "label_type": "tire",
+      "category": "Tire",
+      "priority": 2,
+      "description": "Whole tires or tread gators separated from vehicles.",
+      "modality": "Image",
+      "examples": "Large tread strip in middle lane; loose tire rolling toward shoulder.",
+      "question_text": "Do you see loose tires or tire debris in this video stream?"
+    },
+    {
+      "label_type": "channelizing_device",
+      "category": "Channelizing Device (Cones/Barrels)",
+      "priority": 2,
+      "description": "Traffic cones, drums, delineators, barricades used to shape or restrict flow.",
+      "modality": "Image",
+      "examples": "Cone line closing a lane; barrel cluster at taper; Type III barricade across ramp.",
+      "question_text": "Do you see traffic cones, barrels, or other traffic control devices in this video stream?"
+    },
+    {
+      "label_type": "heavy_equipment",
+      "category": "Heavy Equipment",
+      "priority": 3,
+      "description": "Construction/maintenance vehicles not typical traffic: bulldozer, backhoe, grader, roller, excavator.",
+      "modality": "Image",
+      "examples": "Excavator swinging over shoulder; road roller in work zone; loader crossing.",
+      "question_text": "Do you see heavy construction equipment in this video stream?"
+    },
+    {
+      "label_type": "unspecified_actor",
+      "category": "Unspecified Actor",
+      "priority": 3,
+      "description": "Low-confidence/occluded/ambiguous object or actor that cannot be reliably classified.",
+      "modality": "Image",
+      "examples": "Indistinct object under low light; partially occluded silhouette.",
+      "question_text": "Do you see unidentifiable objects or actors in this video stream?"
+    }
+  ],
+  "question_flow": {
+    "initial": {
+      "id": "video_visibility",
+      "question": "Select the video streams where you can clearly see the footage",
+      "type": "multi_select",
+      "required": true,
+      "next": "ai_suggestions"
+    },
+    "ai_suggestions": {
+      "id": "ai_review",
+      "question": "Based on the incident description, AI suggests these labels might be relevant. Please review:",
+      "type": "review_suggestions",
+      "required": false,
+      "next": "incident_categories"
+    },
+    "incident_categories": {
+      "id": "incidents",
+      "question": "Select any incident types you observe in the selected video streams",
+      "type": "multi_select",
+      "categories": ["incidents"],
+      "priority_filter": [1, 2, 3],
+      "required": false,
+      "next": "actor_categories"
+    },
+    "actor_categories": {
+      "id": "actors", 
+      "question": "Select any actors (vehicles, people, objects) you observe in the selected video streams",
+      "type": "multi_select",
+      "categories": ["actors"],
+      "priority_filter": [1, 2, 3],
+      "required": false,
+      "next": "confidence_review"
+    },
+    "confidence_review": {
+      "id": "confidence",
+      "question": "Please rate your confidence for each selected label (1-5 scale)",
+      "type": "confidence_rating",
+      "required": true,
+      "next": "complete"
+    }
+  }
+}
