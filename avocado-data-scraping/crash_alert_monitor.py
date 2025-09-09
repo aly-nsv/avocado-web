@@ -95,7 +95,7 @@ class IncidentMonitor:
         logger.info(f"   Poll interval: {poll_interval} seconds")
         logger.info(f"   Video capture duration: {video_capture_duration/60:.1f} minutes")
         logger.info(f"   Max cameras per incident: {max_cameras_per_incident}")
-        logger.info("   📹 CAMERA MODE: Using incident-associated cameras directly (no search required!)")
+        logger.info("   📹 CAMERA MODE: Using incident details API -> match against images -> fallback to JSON")
         logger.info("   🔑 AUTH MODE: Dynamic camera authentication with fresh FL-511 API calls")
     
 
@@ -121,56 +121,173 @@ class IncidentMonitor:
         except Exception as e:
             logger.error(f"❌ Failed to load existing incident IDs: {e}")
             # Continue with empty set if database load fails
-    
+
+    def fetch_incident_details(self, incident_id: int) -> Optional[Dict]:
+        """
+        Fetch detailed incident information from FL-511 API using incident ID
+        
+        Args:
+            incident_id: The incident ID to fetch details for
+            
+        Returns:
+            Dict containing incident details including cameraIds, or None if failed
+        """
+        try:
+            url = f"https://fl511.com/map/data/Incidents/{incident_id}"
+            
+            # Headers from the curl example (simplified to essential ones)
+            headers = {
+                'accept': '*/*',
+                'accept-language': 'en-US,en;q=0.9',
+                'referer': 'https://fl511.com/',
+                'sec-fetch-dest': 'empty',
+                'sec-fetch-mode': 'cors',
+                'sec-fetch-site': 'same-origin',
+                'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36',
+                'x-requested-with': 'XMLHttpRequest'
+            }
+            
+            logger.info(f"🔍 Fetching incident details for ID: {incident_id}")
+            response = requests.get(url, headers=headers, timeout=10)
+            
+            if response.status_code == 200:
+                incident_data = response.json()
+                logger.info(f"✅ Successfully fetched incident details for {incident_id}")
+                
+                # Log camera IDs if present
+                camera_ids = incident_data.get('cameraIds')
+                if camera_ids:
+                    logger.info(f"📹 Found camera IDs in incident details: {camera_ids}")
+                else:
+                    logger.info(f"⚠️ No camera IDs found in incident details for {incident_id}")
+                
+                return incident_data
+            else:
+                logger.warning(f"❌ Failed to fetch incident details for {incident_id}: HTTP {response.status_code}")
+                return None
+                
+        except Exception as e:
+            logger.error(f"❌ Error fetching incident details for {incident_id}: {e}")
+            return None
     
     def get_incident_cameras(self, incident: TrafficIncident) -> List[Dict]:
         """
-        Get cameras directly from the incident data (much simpler!)
+        Get camera for incident using the new approach:
+        1. Fetch incident details to get cameraIds
+        2. Match cameraIds against images in incident response
+        3. Fallback to fl511_cameras_all_regions.json if no match
+        4. Return only one camera for streaming
         
         Args:
-            incident: Traffic incident with associated cameras
+            incident: Traffic incident
             
         Returns:
-            List of camera metadata from the incident itself
+            List containing at most one camera for streaming
         """
-        if not incident.cameras:
-            logger.warning(f"🚫 No cameras associated with incident {incident.id}")
+        # Step 1: Fetch incident details to get cameraIds
+        incident_details = self.fetch_incident_details(incident.id)
+        if not incident_details:
+            logger.warning(f"🚫 Could not fetch incident details for {incident.id}")
             return []
         
-        formatted_cameras = []
-        for camera in incident.cameras[:self.max_cameras_per_incident]:
-            # Extract video URLs from camera images
-            video_cameras = []
-            
-            if camera.images:
-                for image in camera.images:
-                    if image.video_url:  # Only include cameras with video
-                        video_camera = {
-                            'camera_id': str(image.id),
-                            'image_id': str(image.id),
-                            'camera_site_id': str(image.camera_site_id),
-                            'video_url': image.video_url,
-                            'description': image.description,
-                            'location': camera.location,
-                            'is_video_auth_required': image.is_video_auth_required,
-                            'video_type': image.video_type,
-                            'relevance_score': 10.0,  # Perfect relevance - it's directly associated!
-                            'raw_camera_data': {
-                                'id': image.id,
-                                'images': [{'id': image.id, 'videoUrl': image.video_url}]
+        camera_ids_str = incident_details.get('cameraIds')
+        if not camera_ids_str:
+            logger.warning(f"🚫 No camera IDs found in incident details for {incident.id}")
+            return []
+        
+        # Parse camera IDs (could be comma-separated)
+        camera_ids = [cam_id.strip() for cam_id in camera_ids_str.split(',') if cam_id.strip()]
+        logger.info(f"📹 Target camera IDs from incident details: {camera_ids}")
+        
+        # Step 2: Try to match camera IDs against images in incident response
+        matched_camera = None
+        if incident.cameras:
+            for camera in incident.cameras:
+                if camera.images:
+                    for image in camera.images:
+                        # Convert image.id to string for comparison
+                        image_id_str = str(image.id)
+                        if image_id_str in camera_ids and image.video_url:
+                            matched_camera = {
+                                'camera_id': image_id_str,
+                                'image_id': image_id_str,
+                                'camera_site_id': str(image.camera_site_id),
+                                'video_url': image.video_url,
+                                'description': image.description,
+                                'location': camera.location,
+                                'is_video_auth_required': image.is_video_auth_required,
+                                'video_type': image.video_type,
+                                'relevance_score': 10.0,
+                                'raw_camera_data': {
+                                    'id': image.id,
+                                    'images': [{'id': image.id, 'videoUrl': image.video_url}]
+                                }
                             }
-                        }
-                        video_cameras.append(video_camera)
+                            logger.info(f"✅ Matched camera {image_id_str} from incident images")
+                            break
+                if matched_camera:
+                    break
+        
+        # Step 3: Fallback to fl511_cameras_all_regions.json if no match
+        if not matched_camera:
+            logger.info(f"⚠️ No camera match found in incident images, falling back to camera JSON file")
+            matched_camera = self._load_camera_from_json(camera_ids[0])  # Use first camera ID
+        
+        if matched_camera:
+            logger.info(f"📹 Using camera {matched_camera['camera_id']} - {matched_camera.get('description', 'Unknown')}")
+            logger.info(f"      Video URL: {matched_camera.get('video_url', 'N/A')}")
+            return [matched_camera]  # Return only one camera
+        else:
+            logger.warning(f"❌ Could not find any usable camera for incident {incident.id}")
+            return []
+    
+    def _load_camera_from_json(self, camera_id: str) -> Optional[Dict]:
+        """
+        Load camera data from fl511_cameras_all_regions.json as fallback
+        
+        Args:
+            camera_id: The camera ID to look up
             
-            formatted_cameras.extend(video_cameras)
-        
-        logger.info(f"📹 Found {len(formatted_cameras)} cameras directly associated with incident {incident.id}")
-        for i, cam in enumerate(formatted_cameras, 1):
-            logger.info(f"   {i}. Camera {cam['camera_id']} - {cam['description']}")
-            logger.info(f"      Video URL: {cam['video_url']}")
-            logger.info(f"      Auth Required: {cam['is_video_auth_required']}")
-        
-        return formatted_cameras
+        Returns:
+            Camera dict or None if not found
+        """
+        try:
+            with open('fl511_cameras_all_regions.json', 'r') as f:
+                cameras_data = json.load(f)
+            
+            # Search for camera by ID
+            for camera in cameras_data:
+                # Check if this camera matches the ID (could be in different fields)
+                if (str(camera.get('id')) == camera_id or 
+                    str(camera.get('camera_id')) == camera_id or
+                    str(camera.get('camera_site_id')) == camera_id):
+                    
+                    logger.info(f"✅ Found camera {camera_id} in JSON file")
+                    
+                    # Format for compatibility with existing code
+                    formatted_camera = {
+                        'camera_id': camera_id,
+                        'image_id': camera_id,
+                        'camera_site_id': camera_id,
+                        'video_url': camera.get('video_url') or camera.get('videoUrl'),
+                        'description': camera.get('description') or camera.get('name'),
+                        'location': camera.get('location'),
+                        'is_video_auth_required': camera.get('is_video_auth_required', True),
+                        'video_type': camera.get('video_type'),
+                        'relevance_score': 8.0,  # Good relevance from JSON lookup
+                        'raw_camera_data': {
+                            'id': camera_id,
+                            'images': [{'id': camera_id, 'videoUrl': camera.get('video_url') or camera.get('videoUrl')}]
+                        }
+                    }
+                    return formatted_camera
+            
+            logger.warning(f"⚠️ Camera {camera_id} not found in JSON file")
+            return None
+            
+        except Exception as e:
+            logger.error(f"❌ Error loading camera from JSON file: {e}")
+            return None
     
 
     def capture_incident_video(self, incident: TrafficIncident, cameras: List[Dict]) -> Dict:
@@ -399,7 +516,7 @@ class IncidentMonitor:
                         incident.region,
                         incident.county,
                         incident.id,  # incident_id for correlation
-                        f'direct_camera_{timestamp}'  # avocado_version
+                        f'coffee_battery_{timestamp}'  # avocado_version
                     ))
                     logger.info(f"✅ Successfully inserted segment {segment['filename']} for camera {camera_id}")
                 except Exception as segment_error:
