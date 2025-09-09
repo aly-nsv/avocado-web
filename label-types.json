@@ -274,7 +274,7 @@
     }
   ],
   "question_flow": {
-    "initial": {
+    "video_visibility": {
       "id": "video_visibility",
       "question": "Select the video streams where you can clearly see the footage",
       "type": "multi_select",
@@ -282,22 +282,22 @@
       "next": "ai_suggestions"
     },
     "ai_suggestions": {
-      "id": "ai_review",
+      "id": "ai_suggestions",
       "question": "Based on the incident description, AI suggests these labels might be relevant. Please review:",
       "type": "review_suggestions",
       "required": false,
-      "next": "incident_categories"
+      "next": "incidents"
     },
-    "incident_categories": {
+    "incidents": {
       "id": "incidents",
       "question": "Select any incident types you observe in the selected video streams",
       "type": "multi_select",
       "categories": ["incidents"],
       "priority_filter": [1, 2, 3],
       "required": false,
-      "next": "actor_categories"
+      "next": "actors"
     },
-    "actor_categories": {
+    "actors": {
       "id": "actors", 
       "question": "Select any actors (vehicles, people, objects) you observe in the selected video streams",
       "type": "multi_select",
@@ -307,7 +307,7 @@
       "next": "confidence_review"
     },
     "confidence_review": {
-      "id": "confidence",
+      "id": "confidence_review",
       "question": "Please rate your confidence for each selected label (1-5 scale)",
       "type": "confidence_rating",
       "required": true,

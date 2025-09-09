@@ -191,9 +191,9 @@ export default function ReviewPage() {
         </div>
 
         {/* Main Content Grid */}
-        <div className="grid grid-cols-12 gap-6">
-          {/* Left Panel - Incident Details */}
-          <div className="col-span-4">
+        <div className="grid grid-cols-12 gap-4">
+          {/* Left Panel - Incident Details (Narrower) */}
+          <div className="col-span-3 -ml-4">
             <IncidentDetailsPanel 
               incident={currentIncident.incident}
               videoSegments={currentIncident.video_segments}
@@ -202,15 +202,15 @@ export default function ReviewPage() {
             />
           </div>
 
-          {/* Center Panel - Video Players */}
-          <div className="col-span-5">
-            <Card>
-              <CardHeader>
+          {/* Center Panel - Video Players (Larger & Taller) */}
+          <div className="col-span-6">
+            <Card className="h-[85vh]">
+              <CardHeader className="pb-3">
                 <CardTitle>
                   Video Segments ({currentIncident.total_segments})
                 </CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="h-full pb-4">
                 <VideoPlayerGrid 
                   videoSegments={currentIncident.video_segments}
                   videoSelections={formState.videoSelections}
@@ -222,19 +222,21 @@ export default function ReviewPage() {
             </Card>
           </div>
 
-          {/* Right Panel - Labeling Form */}
+          {/* Right Panel - Labeling Form (Taller) */}
           <div className="col-span-3">
-            <LabelingForm 
-              incident={currentIncident.incident}
-              formState={formState}
-              onStateChange={handleFormStateChange}
-              onComplete={() => {
-                // Move to next incident after successful completion
-                if (currentIncidentIndex < incidents.length - 1) {
-                  handleNextIncident()
-                }
-              }}
-            />
+            <div className="h-[85vh]">
+              <LabelingForm 
+                incident={currentIncident.incident}
+                formState={formState}
+                onStateChange={handleFormStateChange}
+                onComplete={() => {
+                  // Move to next incident after successful completion
+                  if (currentIncidentIndex < incidents.length - 1) {
+                    handleNextIncident()
+                  }
+                }}
+              />
+            </div>
           </div>
         </div>
       </div>
