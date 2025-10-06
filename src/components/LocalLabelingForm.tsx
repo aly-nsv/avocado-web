@@ -40,7 +40,7 @@ export function LocalLabelingForm({
   onDownloadCSV,
   onComplete
 }: LocalLabelingFormProps) {
-  const [currentStep, setCurrentStep] = useState<'video_quality' | 'ai_suggestions' | 'incidents' | 'actors' | 'confidence_review' | 'complete'>('video_quality')
+  const [currentStep, setCurrentStep] = useState<'video_quality' | 'ai_suggestions' | 'incidents' | 'actors' | 'complete'>('video_quality')
   const [videoQuality, setVideoQuality] = useState<'high' | 'medium' | 'low' | 'none' | null>(null)
   const [labelSelections, setLabelSelections] = useState<LabelSelection[]>([])
   const [notes, setNotes] = useState('')
@@ -141,7 +141,7 @@ export function LocalLabelingForm({
 
   const handlePreviousStep = () => {
     // Navigate back through the flow
-    const steps = ['video_quality', 'ai_suggestions', 'incidents', 'actors', 'confidence_review']
+    const steps = ['video_quality', 'ai_suggestions', 'incidents', 'actors']
     const currentIndex = steps.indexOf(currentStep)
     if (currentIndex > 0) {
       setCurrentStep(steps[currentIndex - 1] as any)
@@ -272,7 +272,7 @@ export function LocalLabelingForm({
               Select any {categoryName.toLowerCase()} you observe in the selected video streams.
             </Text>
 
-            <div className="space-y-2 max-h-60 overflow-y-auto">
+            <div className="space-y-2">
               {availableLabels.map((label) => {
                 const isSelected = labelSelections.some(ls => ls.label_type === label.label_type)
                 const isAISuggested = aiSuggestions.some(ai => ai.label_type === label.label_type)
@@ -318,70 +318,7 @@ export function LocalLabelingForm({
             </div>
           </div>
         )
-
-      case 'confidence_review':
-        return (
-          <div className="space-y-4">
-            <Text variant="body2" className="text-sm">
-              Rate your confidence for each selected label (1-5 scale).
-            </Text>
-
-            <div className="space-y-3">
-              {labelSelections.map((selection) => (
-                <div key={selection.label_type} className="p-3 bg-surface rounded">
-                  <Text variant="caption" className="font-medium mb-2">
-                    {selection.label_type.replace(/_/g, ' ')}
-                  </Text>
-                  
-                  <div className="flex items-center gap-2">
-                    <Text variant="caption" className="text-xs text-neutral-400 w-16">
-                      Low (1)
-                    </Text>
-                    <Input
-                      type="range"
-                      min="1"
-                      max="5"
-                      step="1"
-                      value={selection.confidence || 3}
-                      onChange={(e) => handleConfidenceChange(
-                        selection.label_type, 
-                        parseInt(e.target.value)
-                      )}
-                      className="flex-1"
-                    />
-                    <Text variant="caption" className="text-xs text-neutral-400 w-16">
-                      High (5)
-                    </Text>
-                    <Badge variant="outline" className="w-8 text-xs">
-                      {selection.confidence || 3}
-                    </Badge>
-                  </div>
-                </div>
-              ))}
-              
-              {labelSelections.length === 0 && (
-                <Text variant="caption" className="text-neutral-400">
-                  No labels selected to rate.
-                </Text>
-              )}
-            </div>
-
-            {/* Notes */}
-            <div className="space-y-2">
-              <Text variant="caption" className="font-medium text-sm">
-                Additional Notes (Optional)
-              </Text>
-              <textarea
-                className="w-full p-2 bg-surface border border-neutral-700 rounded resize-none text-sm"
-                rows={3}
-                placeholder="Any additional observations or comments..."
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-              />
-            </div>
-          </div>
-        )
-
+ 
       case 'complete':
         return (
           <div className="space-y-4">
@@ -426,7 +363,7 @@ export function LocalLabelingForm({
 
   // Get step info for display
   const getStepInfo = () => {
-    const steps = ['video_quality', 'ai_suggestions', 'incidents', 'actors', 'confidence_review', 'complete']
+    const steps = ['video_quality', 'ai_suggestions', 'incidents', 'actors', 'complete']
     const currentIndex = steps.indexOf(currentStep)
     return { currentIndex: currentIndex + 1, totalSteps: steps.length }
   }
@@ -434,7 +371,7 @@ export function LocalLabelingForm({
   const { currentIndex, totalSteps } = getStepInfo()
 
   return (
-    <Card className="h-full flex flex-col">
+    <Card className="h-full flex flex-col ">
       <CardHeader className="flex-shrink-0">
         <div className="flex items-center justify-between">
           <CardTitle className="text-lg">Local Labeling Process</CardTitle>
@@ -459,9 +396,9 @@ export function LocalLabelingForm({
         </div>
       </CardHeader>
       
-      <CardContent className="flex-1 flex flex-col space-y-6">
+      <CardContent className="flex-1 flex flex-col overflow-y-auto">
         {/* Current Step Content */}
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto mb-4">
           {renderCurrentStep()}
         </div>
 
@@ -487,7 +424,7 @@ export function LocalLabelingForm({
               onClick={handleNextStep}
               disabled={currentStep === 'video_quality' && !videoQuality}
             >
-              {currentStep === 'confidence_review' ? 'Complete' : 'Next'}
+              Next
             </Button>
           )}
         </div>

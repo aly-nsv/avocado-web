@@ -304,13 +304,6 @@
       "categories": ["actors"],
       "priority_filter": [1, 2, 3],
       "required": false,
-      "next": "confidence_review"
-    },
-    "confidence_review": {
-      "id": "confidence_review",
-      "question": "Please rate your confidence for each selected label (1-5 scale)",
-      "type": "confidence_rating",
-      "required": true,
       "next": "complete"
     }
   }

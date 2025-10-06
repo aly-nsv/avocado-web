@@ -248,14 +248,14 @@ export default function StateMapPage() {
               <MapIcon className="h-4 w-4" />
               <span>Network Map</span>
             </Link>
-            <Link href={`/${selectedState.code}/incidents` as any} className="text-neutral-600 hover:text-neutral-900 flex items-center space-x-1 transition-colors">
+            {/* <Link href={`/${selectedState.code}/incidents` as any} className="text-neutral-600 hover:text-neutral-900 flex items-center space-x-1 transition-colors">
               <ExclamationTriangleIcon className="h-4 w-4" />
               <span>Incidents</span>
             </Link>
             <Link href={`/${selectedState.code}/analytics` as any} className="text-neutral-600 hover:text-neutral-900 flex items-center space-x-1 transition-colors">
               <ChartBarIcon className="h-4 w-4" />
               <span>Analytics</span>
-            </Link>
+            </Link> */}
             <Link href={"/review" as any} className="text-neutral-600 hover:text-neutral-900 flex items-center space-x-1 transition-colors">
               <TruckIcon className="h-4 w-4" />
               <span>Historical Review</span>

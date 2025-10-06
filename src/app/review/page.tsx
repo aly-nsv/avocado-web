@@ -78,7 +78,7 @@ export default function ReviewPage() {
   const initializeFormState = (incident: ReviewIncidentData) => {
     const videoSelections: VideoStreamSelection[] = incident.video_segments.map(segment => ({
       segment_id: segment.segment_id,
-      selected: false,
+      selected: true, // Select all videos by default
     }))
 
     const sessionId = `session_${Date.now()}_${incident.incident.incident_id}`
