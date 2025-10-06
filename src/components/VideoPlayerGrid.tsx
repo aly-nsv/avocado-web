@@ -91,7 +91,10 @@ function VideoPlayer({ segment, isSelected, onSelectionToggle, onEnlarge }: Vide
   }
 
   return (
-    <Card className={`relative ${isSelected ? 'ring-2 ring-primary' : ''}`}>
+    <Card
+      className={`relative ${isSelected ? 'ring-2 ring-primary bg-blue-100 dark:bg-blue-900/40' : ''}`}
+      style={isSelected ? { backgroundColor: 'rgba(59,130,246,0.15)' } : undefined} // fallback for blue-100
+    >
       <CardContent className="p-1">
         {/* Top Controls */}
         <div className="absolute top-2 right-2 z-10 flex gap-1">
@@ -253,6 +256,7 @@ export function VideoPlayerGrid({
   }
 
   const selectedCount = videoSelections.filter(s => s.selected).length
+  const allSelected = selectedCount === videoSegments.length
 
   if (videoSegments.length === 0) {
     return (
@@ -275,10 +279,10 @@ export function VideoPlayerGrid({
         <div className="flex gap-2">
           <Button
             size="sm"
-            variant="outline"
+            variant={allSelected ? "primary" : "outline"}
             onClick={() => {
-              const allSelected = videoSelections.map(s => ({ ...s, selected: true }))
-              onSelectionChange(allSelected)
+              const allSelectedState = videoSelections.map(s => ({ ...s, selected: true }))
+              onSelectionChange(allSelectedState)
             }}
           >
             Select All
