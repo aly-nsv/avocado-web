@@ -10,11 +10,13 @@ This script:
 2. Calls OpenAI GPT-4 API with structured prompts
 3. Gets label predictions with confidence scores
 4. Stores results back to database as JSONB
+5. Optionally filters incidents by relevant camera IDs from JSON file
 
 Usage:
     python incident_labeling_ai.py --test-batch 10    # Process 10 incidents for testing
     python incident_labeling_ai.py --all              # Process all unlabeled incidents
     python incident_labeling_ai.py --batch-size 50    # Process in batches of 50
+    python incident_labeling_ai.py --relevant-cameras camera_results.json  # Filter by camera IDs
 """
 
 import os
@@ -67,12 +69,13 @@ class LabelPrediction:
 class IncidentLabeler:
     """AI-powered incident labeling using GPT-4"""
     
-    def __init__(self, openai_api_key: Optional[str] = None):
+    def __init__(self, openai_api_key: Optional[str] = None, relevant_cameras_file: Optional[str] = None):
         """
         Initialize the incident labeler
         
         Args:
             openai_api_key: OpenAI API key (if None, reads from environment)
+            relevant_cameras_file: Path to JSON file with relevant camera IDs (optional)
         """
         # Setup OpenAI client
         api_key = openai_api_key or os.getenv('OPENAI_API_KEY')
@@ -92,8 +95,13 @@ class IncidentLabeler:
         # Load label types from JSON
         self.label_types = self._load_label_types()
         
+        # Load relevant camera IDs if provided
+        self.relevant_camera_ids = self._load_relevant_cameras(relevant_cameras_file)
+        
         logger.info("🤖 AI Incident Labeler initialized")
         logger.info(f"   Loaded {len(self.label_types['incidents']) + len(self.label_types['actors'])} label types")
+        if self.relevant_camera_ids:
+            logger.info(f"   Loaded {len(self.relevant_camera_ids)} relevant camera IDs for filtering")
         
     def _load_label_types(self) -> Dict:
         """Load label types from label-types.json"""
@@ -107,34 +115,68 @@ class IncidentLabeler:
             except FileNotFoundError:
                 raise FileNotFoundError("label-types.json not found. Please ensure it's in the current directory or parent directory.")
     
+    def _load_relevant_cameras(self, relevant_cameras_file: Optional[str]) -> Optional[set]:
+        """Load relevant camera IDs from JSON file"""
+        if not relevant_cameras_file:
+            return None
+        
+        try:
+            with open(relevant_cameras_file, 'r') as f:
+                camera_data = json.load(f)
+            
+            # Extract camera IDs from the JSON structure
+            camera_ids = set()
+            for item in camera_data:
+                if 'camera_id' in item:
+                    camera_ids.add(str(item['camera_id']))
+            
+            logger.info(f"📷 Loaded {len(camera_ids)} relevant camera IDs from {relevant_cameras_file}")
+            return camera_ids
+            
+        except FileNotFoundError:
+            logger.warning(f"⚠️ Relevant cameras file not found: {relevant_cameras_file}")
+            return None
+        except Exception as e:
+            logger.error(f"❌ Error loading relevant cameras file: {e}")
+            return None
+    
     def get_unlabeled_incidents(self, limit: Optional[int] = None) -> List[Incident]:
         """
-        Get incidents that don't have labels yet
+        Get incidents that don't have labels yet and are referenced in video_segments table
         
         Args:
             limit: Maximum number of incidents to return (None for all)
             
         Returns:
-            List of unlabeled incidents
+            List of unlabeled incidents that have associated video segments
         """
         try:
             conn = psycopg2.connect(**self.db_config)
             cur = conn.cursor()
             
-            # Query for incidents without labels
-            query = """
-                SELECT incident_id, description, incident_type, roadway_name, region, severity
-                FROM incidents 
-                WHERE (labels IS NULL OR labels = '[]'::jsonb)
-                  AND description IS NOT NULL 
-                  AND description != ''
-                ORDER BY incident_id DESC
+            # Base query for incidents without labels that are referenced in video_segments
+            base_query = """
+                SELECT DISTINCT i.incident_id, i.description, i.incident_type, i.roadway_name, i.region, i.severity
+                FROM incidents i
+                INNER JOIN video_segments vs ON i.incident_id = vs.incident_id
+                WHERE (i.labels IS NULL OR i.labels = '[]'::jsonb)
+                  AND i.description IS NOT NULL 
+                  AND i.description != ''
             """
             
-            if limit:
-                query += f" LIMIT {limit}"
+            # Add camera filtering if relevant cameras are loaded
+            if self.relevant_camera_ids:
+                # Convert set to comma-separated string for SQL IN clause
+                camera_ids_str = ','.join(f"'{cam_id}'" for cam_id in self.relevant_camera_ids)
+                base_query += f" AND vs.camera_id IN ({camera_ids_str})"
+                logger.info(f"🔍 Filtering incidents by {len(self.relevant_camera_ids)} relevant camera IDs")
             
-            cur.execute(query)
+            base_query += " ORDER BY i.incident_id DESC"
+            
+            if limit:
+                base_query += f" LIMIT {limit}"
+            
+            cur.execute(base_query)
             results = cur.fetchall()
             
             incidents = []
@@ -149,7 +191,9 @@ class IncidentLabeler:
                 ))
             
             conn.close()
-            logger.info(f"📊 Found {len(incidents)} unlabeled incidents")
+            
+            filter_msg = f" (filtered by {len(self.relevant_camera_ids)} relevant cameras)" if self.relevant_camera_ids else ""
+            logger.info(f"📊 Found {len(incidents)} unlabeled incidents with video segments{filter_msg}")
             return incidents
             
         except Exception as e:
@@ -385,6 +429,7 @@ def main():
     parser.add_argument('--all', action='store_true', help='Process all unlabeled incidents')
     parser.add_argument('--batch-size', type=int, default=25, help='Batch size for processing (default: 25)')
     parser.add_argument('--openai-key', help='OpenAI API key (or set OPENAI_API_KEY env var)')
+    parser.add_argument('--relevant-cameras', help='Path to JSON file with relevant camera IDs for filtering incidents')
     
     args = parser.parse_args()
     
@@ -395,8 +440,12 @@ def main():
         return
     
     try:
-        # Initialize labeler
-        labeler = IncidentLabeler(openai_api_key=args.openai_key)
+        # Initialize labeler with relevant cameras file if provided
+        print(f"Relevant cameras file: {args.relevant_cameras}")
+        labeler = IncidentLabeler(
+            openai_api_key=args.openai_key,
+            relevant_cameras_file=args.relevant_cameras
+        )
         
         # Determine how many incidents to process
         if args.test_batch:
