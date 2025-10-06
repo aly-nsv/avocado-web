@@ -256,9 +256,9 @@ export default function StateMapPage() {
               <ChartBarIcon className="h-4 w-4" />
               <span>Analytics</span>
             </Link>
-            <Link href={"/about" as any} className="text-neutral-600 hover:text-neutral-900 flex items-center space-x-1 transition-colors">
+            <Link href={"/review" as any} className="text-neutral-600 hover:text-neutral-900 flex items-center space-x-1 transition-colors">
               <TruckIcon className="h-4 w-4" />
-              <span>About</span>
+              <span>Historical Review</span>
             </Link>
           </div>
         </div>
