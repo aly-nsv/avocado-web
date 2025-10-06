@@ -341,6 +341,20 @@ export function LocalLabelingForm({
               </ul>
             </div>
 
+            {/* Human Notes and Observations */}
+            <div className="space-y-2">
+              <Text variant="caption" className="font-medium text-sm">
+                Human Notes & Observations
+              </Text>
+              <textarea
+                className="w-full p-2 bg-surface border border-neutral-700 rounded resize-none text-sm"
+                rows={4}
+                placeholder="Add any additional observations, notes, or comments about this incident..."
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+              />
+            </div>
+
             {errors.submit && (
               <div className="flex items-center gap-2 p-2 bg-red-500/10 rounded text-red-400 text-sm">
                 <AlertCircle className="w-4 h-4" />

@@ -18,6 +18,7 @@ import { IncidentDetailsPanel } from '@/components/IncidentDetailsPanel'
 import { VideoPlayerGrid } from '@/components/VideoPlayerGrid'
 import { LabelingForm } from '@/components/LabelingForm'
 import { LocalLabelingForm } from '@/components/LocalLabelingForm'
+import labelConfig from '../../../label-types.json'
 
 export default function ReviewPage() {
   const [incidents, setIncidents] = useState<ReviewIncidentData[]>([])
@@ -121,57 +122,84 @@ export default function ReviewPage() {
     }
   }
 
-  const generateCSVData = (): CSVDownloadData[] => {
-    return localLabelingData.map(data => {
+  const generateCSVData = () => {
+    // Use imported label config to get all possible label types
+    
+    // Get all possible label types
+    const allIncidentLabels = labelConfig.incidents.map((label: any) => label.label_type)
+    const allActorLabels = labelConfig.actors.map((label: any) => label.label_type)
+    const allLabels = [...allIncidentLabels, ...allActorLabels]
+
+    // Create header rows
+    const textHeaders = [
+      'Incident ID', 'Roadway Name', 'Incident Type', 'Description', 'Video Quality',
+      ...labelConfig.incidents.map((label: any) => label.category),
+      ...labelConfig.actors.map((label: any) => label.category),
+      'AI Labels JSON', 'Human Notes', 'Timestamp'
+    ]
+    
+    const codeHeaders = [
+      'incident_id', 'roadway_name', 'incident_type', 'description', 'video_quality',
+      ...allIncidentLabels,
+      ...allActorLabels,
+      'ai_labels_json', 'human_notes', 'timestamp'
+    ]
+
+    // Generate data rows
+    const dataRows = localLabelingData.map(data => {
       const incident = incidents.find(inc => inc.incident.incident_id === data.incident_id)?.incident
-      const avgConfidence = Object.values(data.confidence_ratings).length > 0 
-        ? Object.values(data.confidence_ratings).reduce((sum, rating) => sum + rating, 0) / Object.values(data.confidence_ratings).length
-        : 0
       
-      return {
-        incident_id: data.incident_id,
-        roadway_name: incident?.roadway_name || '',
-        incident_type: incident?.incident_type || '',
-        description: incident?.description || '',
-        video_quality: data.video_quality,
-        selected_labels: data.selected_labels.join('; '),
-        ai_suggested_labels: data.ai_suggested_labels.map(ai => `${ai.label_type} (${Math.round(ai.confidence * 100)}%)`).join('; '),
-        confidence_average: Number(avgConfidence.toFixed(2)),
-        timestamp: data.timestamp,
-        notes: data.notes || ''
-      }
+      // Create a row with basic info + binary columns for each label
+      const row: any[] = [
+        data.incident_id,
+        incident?.roadway_name || '',
+        incident?.incident_type || '',
+        incident?.description || '',
+        data.video_quality,
+      ]
+      
+      // Add binary columns for each label (1 if human selected, 0 if not)
+      allLabels.forEach(labelType => {
+        row.push(data.selected_labels.includes(labelType) ? 1 : 0)
+      })
+      
+      // Add AI labels as JSON and human notes
+      row.push(JSON.stringify(data.ai_suggested_labels))
+      row.push(data.notes || '')
+      row.push(data.timestamp)
+      
+      return row
     })
+
+    return {
+      textHeaders,
+      codeHeaders, 
+      dataRows
+    }
   }
 
   const downloadCSV = () => {
-    const csvData = generateCSVData()
-    if (csvData.length === 0) return
+    const { textHeaders, codeHeaders, dataRows } = generateCSVData()
+    if (dataRows.length === 0) return
 
-    const headers = [
-      'incident_id',
-      'roadway_name', 
-      'incident_type',
-      'description',
-      'video_quality',
-      'selected_labels',
-      'ai_suggested_labels',
-      'confidence_average',
-      'timestamp',
-      'notes'
-    ]
+    // Helper function to escape CSV values
+    const escapeCsvValue = (value: any) => {
+      const stringValue = String(value || '')
+      if (stringValue.includes(',') || stringValue.includes('"') || stringValue.includes('\n')) {
+        return `"${stringValue.replace(/"/g, '""')}"`
+      }
+      return stringValue
+    }
 
+    // Create CSV content with dual headers + data rows
     const csvContent = [
-      headers.join(','),
-      ...csvData.map(row => 
-        headers.map(header => {
-          const value = row[header as keyof CSVDownloadData]
-          // Escape commas and quotes in CSV
-          const stringValue = String(value || '')
-          if (stringValue.includes(',') || stringValue.includes('"') || stringValue.includes('\n')) {
-            return `"${stringValue.replace(/"/g, '""')}"`
-          }
-          return stringValue
-        }).join(',')
+      // First header row (text descriptions)
+      textHeaders.map(escapeCsvValue).join(','),
+      // Second header row (code labels)
+      codeHeaders.map(escapeCsvValue).join(','),
+      // Data rows
+      ...dataRows.map(row => 
+        row.map(escapeCsvValue).join(',')
       )
     ].join('\n')
 
