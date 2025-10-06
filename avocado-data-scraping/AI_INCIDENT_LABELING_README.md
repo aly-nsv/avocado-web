@@ -35,6 +35,7 @@ export OPENAI_API_KEY="your-api-key-here"
 **Option B: Command Line Parameter**
 ```bash
 python incident_labeling_ai.py --openai-key "your-api-key-here" --test-batch 10
+
 ```
 
 ### 4. Test with Small Batch

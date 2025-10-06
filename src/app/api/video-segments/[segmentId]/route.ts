@@ -98,11 +98,29 @@ export async function GET(
       }, { status: 400 });
     }
 
+    // // Debug (non-sensitive): Print storage client status without leaking credentials
+    // try {
+    //   if (storage) {
+    //     const projectId = await storage.getProjectId().catch(() => undefined);
+    //     console.log('GCS Storage client ready', {
+    //       projectId: projectId || 'unknown',
+    //       hasCredentialsFile: Boolean(process.env.GOOGLE_APPLICATION_CREDENTIALS),
+    //       credentialsPath: process.env.GOOGLE_APPLICATION_CREDENTIALS ? 'placeholder' : undefined,
+    //       envProject: process.env.GCLOUD_PROJECT || process.env.GCP_PROJECT || 'unset'
+    //     });
+    //   } else {
+    //     console.log('GCS Storage client not initialized');
+    //   }
+    // } catch (dbgErr) {
+    //   console.warn('Could not print GCS debug info:', dbgErr instanceof Error ? dbgErr.message : dbgErr);
+    // }
+
     // Get segment details from database
     const result = await db.query(
       'SELECT storage_bucket, storage_path, segment_filename FROM video_segments WHERE segment_id = $1',
       [parseInt(segmentId)]
     );
+    console.log('=========RESULT=========', result);
 
     if (result.rows.length === 0) {
       return NextResponse.json({
@@ -111,9 +129,11 @@ export async function GET(
     }
 
     const segment = result.rows[0];
+    console.log('=========SEGMENT=========', segment);
 
     // If GCS client is not available, try direct URL access
     if (!storage) {
+      console.error('Storage is not initialized');
       const directUrl = `https://storage.googleapis.com/${segment.storage_bucket}/${segment.storage_path}`;
       
       try {
@@ -150,28 +170,47 @@ export async function GET(
     // Use authenticated GCS client to get the file
     try {
       const bucket = storage.bucket(segment.storage_bucket);
-      const file = bucket.file(segment.storage_path);
+      
+      // First, try to find an MP4 version by replacing .ts with .mp4 in the path
+      let targetFile = bucket.file(segment.storage_path);
+      let isConvertedMp4 = false;
+      
+      if (segment.segment_filename.endsWith('.ts')) {
+        
+        const mp4Path = segment.storage_path.replace(/\.ts$/, '.mp4');
+        console.log('=========MP4 PATH=========', mp4Path);
+        const mp4File = bucket.file(mp4Path);
+        console.log('=========MP4 FILE=========', mp4File);
+        // Check if MP4 version exists
+        const [mp4Exists] = await mp4File.exists();
+        
+        if (mp4Exists) {
+          console.log(`Found MP4 version: ${mp4Path}, using instead of ${segment.storage_path}`);
+          targetFile = mp4File;
+          isConvertedMp4 = true;
+        }
+      }
 
-      // Check if file exists
-      const [exists] = await file.exists();
+      // Check if target file exists
+      const [exists] = await targetFile.exists();
       if (!exists) {
         return NextResponse.json({
           error: 'Video segment file not found in GCS',
           bucket: segment.storage_bucket,
-          path: segment.storage_path
+          path: targetFile.name
         }, { status: 404 });
       }
 
       // Get file metadata
-      const [metadata] = await file.getMetadata();
+      const [metadata] = await targetFile.getMetadata();
       const contentLength = parseInt(metadata.size as string) || 0;
 
       // Handle range requests for video streaming
       // Note: We disable range requests for .ts files since they get converted
       const range = request.headers.get('range');
-      const isTransportStream = segment.segment_filename.endsWith('.ts');
+      const needsConversion = segment.segment_filename.endsWith('.ts') && !isConvertedMp4;
       
-      if (range && !isTransportStream) {
+      if (range && !needsConversion) {
         // Parse range header
         const parts = range.replace(/bytes=/, "").split("-");
         const start = parseInt(parts[0], 10);
@@ -179,7 +218,7 @@ export async function GET(
         const chunksize = (end - start) + 1;
 
         // Create read stream with range
-        const stream = file.createReadStream({
+        const stream = targetFile.createReadStream({
           start,
           end
         });
@@ -198,14 +237,14 @@ export async function GET(
             'Content-Range': `bytes ${start}-${end}/${contentLength}`,
             'Accept-Ranges': 'bytes',
             'Content-Length': chunksize.toString(),
-            'Content-Type': 'video/mp2t',
+            'Content-Type': isConvertedMp4 || !segment.segment_filename.endsWith('.ts') ? 'video/mp4' : 'video/mp2t',
             'Access-Control-Allow-Origin': '*',
             'Cache-Control': 'public, max-age=3600',
           },
         });
       } else {
         // Return full file
-        const stream = file.createReadStream();
+        const stream = targetFile.createReadStream();
         const chunks: Buffer[] = [];
         
         for await (const chunk of stream) {
@@ -214,10 +253,8 @@ export async function GET(
         
         const originalBuffer = Buffer.concat(chunks);
         
-        // Check if this is a .ts file that needs conversion
-        const isTransportStream = segment.segment_filename.endsWith('.ts');
-        
-        if (isTransportStream) {
+        // Only convert if we have a .ts file and no MP4 version was found
+        if (needsConversion) {
           try {
             console.log(`Converting .ts file to MP4: ${segment.segment_filename}`);
             const convertedBuffer = await convertTsToMp4(originalBuffer);
@@ -247,7 +284,7 @@ export async function GET(
             });
           }
         } else {
-          // Return original file for non-.ts files
+          // Return original file (either MP4 version was found, or it's already an MP4)
           return new NextResponse(originalBuffer, {
             status: 200,
             headers: {
@@ -267,9 +304,19 @@ export async function GET(
       // Fallback: try to generate a signed URL
       try {
         const bucket = storage.bucket(segment.storage_bucket);
-        const file = bucket.file(segment.storage_path);
         
-        const [signedUrl] = await file.getSignedUrl({
+        // Try to get signed URL for MP4 version first, then fall back to original
+        let fallbackFile = bucket.file(segment.storage_path);
+        if (segment.segment_filename.endsWith('.ts')) {
+          const mp4Path = segment.storage_path.replace(/\.ts$/, '.mp4');
+          const mp4File = bucket.file(mp4Path);
+          const [mp4Exists] = await mp4File.exists();
+          if (mp4Exists) {
+            fallbackFile = mp4File;
+          }
+        }
+        
+        const [signedUrl] = await fallbackFile.getSignedUrl({
           version: 'v4',
           action: 'read',
           expires: Date.now() + 30 * 60 * 1000, // 30 minutes
