@@ -114,6 +114,13 @@ export default function ReviewPage() {
     setLocalLabelingData(prev => [...prev, data])
   }
 
+  const handleLocalLabelComplete = () => {
+    // Move to next incident after successful completion
+    if (currentIncidentIndex < incidents.length - 1) {
+      handleNextIncident()
+    }
+  }
+
   const generateCSVData = (): CSVDownloadData[] => {
     return localLabelingData.map(data => {
       const incident = incidents.find(inc => inc.incident.incident_id === data.incident_id)?.incident
@@ -303,9 +310,14 @@ export default function ReviewPage() {
             <div className="h-[86vh]">
               <LocalLabelingForm 
                 incident={currentIncident.incident}
+                videoSelections={formState.videoSelections}
+                onVideoSelectionsChange={(selections) => 
+                  handleFormStateChange({ videoSelections: selections })
+                }
                 onLabelSubmit={handleLocalLabelSubmit}
                 localLabelingData={localLabelingData}
                 onDownloadCSV={downloadCSV}
+                onComplete={handleLocalLabelComplete}
               />
             </div>
           </div>
