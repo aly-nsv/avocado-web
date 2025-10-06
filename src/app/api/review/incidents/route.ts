@@ -33,6 +33,7 @@ export async function GET(request: NextRequest) {
         i.scraped_at,
         i.created_at,
         i.updated_at,
+        i.labels,
         v.segment_id,
         v.camera_id,
         v.segment_filename,
@@ -56,6 +57,11 @@ export async function GET(request: NextRequest) {
       FROM incidents i
       JOIN video_segments v ON i.incident_id = v.incident_id
       WHERE v.avocado_version LIKE '%coffee%'
+        AND i.labels IS NOT NULL
+        AND i.labels::text != '[]'
+        AND i.labels::text != 'null'
+        AND i.labels::text != '""'
+        AND LENGTH(i.labels::text) > 2
       ORDER BY i.incident_id, v.segment_id
       LIMIT $1 OFFSET $2
     `;
@@ -92,6 +98,14 @@ export async function GET(request: NextRequest) {
             scraped_at: row.scraped_at,
             created_at: row.created_at,
             updated_at: row.updated_at,
+            labels: (() => {
+              try {
+                return typeof row.labels === 'string' ? JSON.parse(row.labels) : (row.labels || []);
+              } catch (e) {
+                console.warn('Failed to parse labels JSON:', row.labels);
+                return [];
+              }
+            })(),
           },
           video_segments: [],
           cameras_involved: new Set<string>()
@@ -142,6 +156,11 @@ export async function GET(request: NextRequest) {
       FROM incidents i
       JOIN video_segments v ON i.incident_id = v.incident_id
       WHERE v.avocado_version LIKE '%coffee%'
+        AND i.labels IS NOT NULL
+        AND i.labels::text != '[]'
+        AND i.labels::text != 'null'
+        AND i.labels::text != '""'
+        AND LENGTH(i.labels::text) > 2
     `;
     
     const countResult = await db.query(countQuery);

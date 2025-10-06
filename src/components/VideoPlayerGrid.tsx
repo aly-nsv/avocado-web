@@ -92,7 +92,7 @@ function VideoPlayer({ segment, isSelected, onSelectionToggle, onEnlarge }: Vide
 
   return (
     <Card className={`relative ${isSelected ? 'ring-2 ring-primary' : ''}`}>
-      <CardContent className="p-2">
+      <CardContent className="p-1">
         {/* Top Controls */}
         <div className="absolute top-2 right-2 z-10 flex gap-1">
           <Button
@@ -119,7 +119,7 @@ function VideoPlayer({ segment, isSelected, onSelectionToggle, onEnlarge }: Vide
         </div>
 
         {/* Video Element - Larger */}
-        <div className="relative aspect-video bg-surface rounded mb-1 overflow-hidden">
+        <div className="relative aspect-video bg-surface rounded mb-0.5 overflow-hidden">
           {hasError ? (
             <div className="absolute inset-0 flex flex-col items-center justify-center bg-surface text-neutral-400">
               <Text variant="caption" className="text-center">
@@ -297,7 +297,7 @@ export function VideoPlayerGrid({
       </div>
 
       {/* Video Grid - Taller and More Responsive */}
-      <div className="grid grid-cols-2 gap-2 h-[calc(100vh-20rem)] overflow-y-auto">
+      <div className="grid grid-cols-2 gap-1 h-[calc(100vh-20rem)] overflow-y-auto">
         {videoSegments.map((segment) => {
           const selection = videoSelections.find(s => s.segment_id === segment.segment_id)
           return (

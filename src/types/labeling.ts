@@ -73,6 +73,7 @@ export interface Incident {
   scraped_at: string;
   created_at: string;
   updated_at: string;
+  labels?: any[]; // JSON array of AI suggestions
 }
 
 export interface IncidentWithSegments extends Incident {
@@ -137,6 +138,9 @@ export interface LabelingFormState {
   sessionId: string;
   isSubmitting: boolean;
   errors: Record<string, string>;
+  // Local labeling process state
+  videoQuality?: 'high' | 'medium' | 'low' | 'none';
+  localLabelingSession?: LocalLabelingSession[];
 }
 
 export interface ReviewIncidentData {
@@ -176,4 +180,35 @@ export interface GetAISuggestionsResponse {
   suggestions: AISuggestion[];
   model_used: string;
   processing_time_ms: number;
+}
+
+// Local labeling process types
+export interface LocalLabelingSession {
+  incident_id: number;
+  video_quality: 'high' | 'medium' | 'low' | 'none';
+  labels: LocalLabelData[];
+  completed_at?: string;
+}
+
+export interface LocalLabelData {
+  incident_id: number;
+  video_quality: 'high' | 'medium' | 'low' | 'none';
+  selected_labels: string[];
+  ai_suggested_labels: AISuggestion[];
+  confidence_ratings: Record<string, number>;
+  notes?: string;
+  timestamp: string;
+}
+
+export interface CSVDownloadData {
+  incident_id: number;
+  roadway_name: string;
+  incident_type: string;
+  description: string;
+  video_quality: string;
+  selected_labels: string;
+  ai_suggested_labels: string;
+  confidence_average: number;
+  timestamp: string;
+  notes: string;
 }
