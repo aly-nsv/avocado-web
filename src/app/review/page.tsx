@@ -10,17 +10,24 @@ import type {
   LabelingFormState,
   VideoStreamSelection,
   LabelSelection,
-  AISuggestion
+  AISuggestion,
+  LocalLabelData,
+  CSVDownloadData
 } from '@/types/labeling'
 import { IncidentDetailsPanel } from '@/components/IncidentDetailsPanel'
 import { VideoPlayerGrid } from '@/components/VideoPlayerGrid'
 import { LabelingForm } from '@/components/LabelingForm'
+import { LocalLabelingForm } from '@/components/LocalLabelingForm'
 
 export default function ReviewPage() {
   const [incidents, setIncidents] = useState<ReviewIncidentData[]>([])
   const [currentIncidentIndex, setCurrentIncidentIndex] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string>('')
+  
+  // Local labeling session state
+  const [localLabelingData, setLocalLabelingData] = useState<LocalLabelData[]>([])
+  const [showLocalLabeling, setShowLocalLabeling] = useState(true)
 
   // Form state for the current incident
   const [formState, setFormState] = useState<LabelingFormState>({
@@ -103,6 +110,75 @@ export default function ReviewPage() {
     setFormState(prev => ({ ...prev, ...newState }))
   }
 
+  const handleLocalLabelSubmit = (data: LocalLabelData) => {
+    setLocalLabelingData(prev => [...prev, data])
+  }
+
+  const generateCSVData = (): CSVDownloadData[] => {
+    return localLabelingData.map(data => {
+      const incident = incidents.find(inc => inc.incident.incident_id === data.incident_id)?.incident
+      const avgConfidence = Object.values(data.confidence_ratings).length > 0 
+        ? Object.values(data.confidence_ratings).reduce((sum, rating) => sum + rating, 0) / Object.values(data.confidence_ratings).length
+        : 0
+      
+      return {
+        incident_id: data.incident_id,
+        roadway_name: incident?.roadway_name || '',
+        incident_type: incident?.incident_type || '',
+        description: incident?.description || '',
+        video_quality: data.video_quality,
+        selected_labels: data.selected_labels.join('; '),
+        ai_suggested_labels: data.ai_suggested_labels.map(ai => `${ai.label_type} (${Math.round(ai.confidence * 100)}%)`).join('; '),
+        confidence_average: Number(avgConfidence.toFixed(2)),
+        timestamp: data.timestamp,
+        notes: data.notes || ''
+      }
+    })
+  }
+
+  const downloadCSV = () => {
+    const csvData = generateCSVData()
+    if (csvData.length === 0) return
+
+    const headers = [
+      'incident_id',
+      'roadway_name', 
+      'incident_type',
+      'description',
+      'video_quality',
+      'selected_labels',
+      'ai_suggested_labels',
+      'confidence_average',
+      'timestamp',
+      'notes'
+    ]
+
+    const csvContent = [
+      headers.join(','),
+      ...csvData.map(row => 
+        headers.map(header => {
+          const value = row[header as keyof CSVDownloadData]
+          // Escape commas and quotes in CSV
+          const stringValue = String(value || '')
+          if (stringValue.includes(',') || stringValue.includes('"') || stringValue.includes('\n')) {
+            return `"${stringValue.replace(/"/g, '""')}"`
+          }
+          return stringValue
+        }).join(',')
+      )
+    ].join('\n')
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+    const link = document.createElement('a')
+    const url = URL.createObjectURL(blob)
+    link.setAttribute('href', url)
+    link.setAttribute('download', `labeling-session-${new Date().toISOString().split('T')[0]}.csv`)
+    link.style.visibility = 'hidden'
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  }
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -156,7 +232,7 @@ export default function ReviewPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="container mx-auto p-6">
+      <div className="container mx-auto px-4 py-6">
         {/* Header */}
         <div className="flex justify-between items-center mb-6">
           <div>
@@ -191,9 +267,9 @@ export default function ReviewPage() {
         </div>
 
         {/* Main Content Grid */}
-        <div className="grid grid-cols-12 gap-4">
+        <div className="grid grid-cols-12 gap-3">
           {/* Left Panel - Incident Details (Narrower) */}
-          <div className="col-span-3 -ml-4">
+          <div className="col-span-3 -ml-6">
             <IncidentDetailsPanel 
               incident={currentIncident.incident}
               videoSegments={currentIncident.video_segments}
@@ -204,13 +280,13 @@ export default function ReviewPage() {
 
           {/* Center Panel - Video Players (Larger & Taller) */}
           <div className="col-span-6">
-            <Card className="h-[85vh]">
-              <CardHeader className="pb-3">
+            <Card className="h-[86vh]">
+              <CardHeader className="pb-2">
                 <CardTitle>
                   Video Segments ({currentIncident.total_segments})
                 </CardTitle>
               </CardHeader>
-              <CardContent className="h-full pb-4">
+              <CardContent className="h-full pb-2">
                 <VideoPlayerGrid 
                   videoSegments={currentIncident.video_segments}
                   videoSelections={formState.videoSelections}
@@ -222,19 +298,14 @@ export default function ReviewPage() {
             </Card>
           </div>
 
-          {/* Right Panel - Labeling Form (Taller) */}
+          {/* Right Panel - Local Labeling Form (Taller) */}
           <div className="col-span-3">
-            <div className="h-[85vh]">
-              <LabelingForm 
+            <div className="h-[86vh]">
+              <LocalLabelingForm 
                 incident={currentIncident.incident}
-                formState={formState}
-                onStateChange={handleFormStateChange}
-                onComplete={() => {
-                  // Move to next incident after successful completion
-                  if (currentIncidentIndex < incidents.length - 1) {
-                    handleNextIncident()
-                  }
-                }}
+                onLabelSubmit={handleLocalLabelSubmit}
+                localLabelingData={localLabelingData}
+                onDownloadCSV={downloadCSV}
               />
             </div>
           </div>
