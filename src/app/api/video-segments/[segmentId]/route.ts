@@ -8,7 +8,7 @@ import { PassThrough } from 'stream';
 
 // Initialize Google Cloud Storage client
 let storage: Storage | null = null;
-// example commit
+// example commit #2 
 
 try {
   // Check if we have service account credentials in environment
