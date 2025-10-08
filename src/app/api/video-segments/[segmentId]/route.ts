@@ -6,13 +6,35 @@ import { pipeline } from 'stream/promises';
 import { PassThrough } from 'stream';
 
 // Initialize Google Cloud Storage client
-// This will use default credentials from the environment
 let storage: Storage | null = null;
 
 try {
-  storage = new Storage();
+  // Check if we have service account credentials in environment
+  if (process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON) {
+    // Parse service account JSON from environment variable
+    const credentials = JSON.parse(process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON);
+    storage = new Storage({
+      credentials,
+      projectId: credentials.project_id,
+    });
+  } else if (process.env.GCP_PROJECT_ID && process.env.GCP_PRIVATE_KEY && process.env.GCP_CLIENT_EMAIL) {
+    // Use individual environment variables
+    storage = new Storage({
+      credentials: {
+        type: 'service_account',
+        project_id: process.env.GCP_PROJECT_ID,
+        private_key: process.env.GCP_PRIVATE_KEY.replace(/\\n/g, '\n'),
+        client_email: process.env.GCP_CLIENT_EMAIL,
+      },
+      projectId: process.env.GCP_PROJECT_ID,
+    });
+  } else {
+    // Fallback to default credentials (for local development)
+    storage = new Storage();
+  }
+  console.log('✅ Google Cloud Storage client initialized successfully');
 } catch (error) {
-  console.error('Failed to initialize GCS client:', error);
+  console.error('❌ Failed to initialize GCS client:', error);
 }
 
 // Convert MPEG-2 Transport Stream to MP4 using FFmpeg

@@ -117,5 +117,11 @@ storybook-static
 *.key
 .ssh/
 
+# Google Cloud service account keys
+key.json
+**/key.json
+service-account*.json
+credentials.json
+
 # Local development
 .local/

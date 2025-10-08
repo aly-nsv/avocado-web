@@ -1,0 +1,13 @@
+{
+  "type": "service_account",
+  "project_id": "avocado-fl511-video",
+  "private_key_id": "37cd847658f0ad9e6da61437e4150dc63b92c01e",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQCcdoXMYopqPnsX\ne4/a06+QYnzarxRsloL0XGMyogUMFSJEjCm12OWbzcZS/flabVhfCueogtcKWpvz\nK0PnnudoVIsRY8LLzpdFe9rD6dzmEIqa+9AD2kcCkZoTNSon+bWusky0X7NJpUGu\n4Vni8XRDOmzrk2H9EuD3vGvhnnAsJwN357+xeeT+rcS8jqG198UYUXGi74SIkJV1\niAfh+udn5paTwuBFRewk2lqFAA9OMWrlpWjGWYHwGu75z0Ylft9JQ2AjbzbMzROT\nCkwHwm03CnvjsMWmU+v9szIdFo4/tnkpHv+IdhMTwr1Fk4vAfgd/r2b3iYm25+BZ\nO6/2y31vAgMBAAECggEALDlkAC0qKnWWnUCTnKqQySLNX5J1F2xDf4ZNk5YwDwY6\nNV3YvEmePLehAvw+aszVWaffasXwukB6K/VisCk+B0M+O6ATA0BViZJEd3O2uGCc\njMn4Nd6Qi61T+3HfhIUUUVicTa9vIbXQJvoTSg4taoMtHjj+TWX0qJFdfNwnoJLE\n3stDWZMKXC7r/QVSsfW3wSTWA76JFrDb1WTb7Yd6LA8F7df40NmTFpQKAZP2WZmx\nu3arFnxFwPMh9AnjKX9LehLFHLR7SN/dsCB5US5S4G1d/rgx11VSI6oadYMsFgw5\nzsNtoBdwX73dDb4vVil+83yum76Sp+ug/KBZ6jbKoQKBgQDaAFz0pntqDnmm6O1N\nexmxq7leyrc0XnOCNY2CH5mznAspszUYeLme5vn8368OuoGIuqHjLy5RcbYVCmwy\njRqMckj2UIrDUpfPhQ6MgI6z/b+HVrJp/QZGGcot/bU50kxxqadBUv/qlIG4Dgf2\nHnNQtFKb4O8uqA9p6xacKAGafQKBgQC3vDKXrTTue8RWtdD75yscq++0FljAMwq+\nJLdW54ksc1aBbeCpxVQjcrxe5RT4NUTQ559R41pW85MUiwBbsD0d6xGkX0fYEUyO\n9WjLgD3k6XczZwqfVIQT/mLEjmoY39a2B5q6ycMZ2/t3tN/tIsbQtPqywmVPMZW6\nQT1BNlFPWwKBgH8qGQ8pEfKisPnZA5vfw/Qs/Lu7ujSVKAH7ZSlTb6Ai1Swk+kLl\nITn8+DQ28vG/f5IXdBmGyxj9IL6TTtwKDUOB4uezwc4AHsgRkJQK5bM+wHuc6gQD\ncaZwosxDI3SwJKFk2kizts7KhASuQpyh1JhuJ4YAJuVraVpapNzARXctAoGAOKdf\nMkXGPIMNV29YsVPmh0C8+NqrIxiaB2dq4PEj6wDle6NV0wN1njiSvPAGN0K1pXTG\nO4nPIWCZyYvS4HLHZaJGHlkC3iz3Xl1totI4Q415o+/x5o846rFV4yXGsUTT/+z4\nWQA9mIusTo0HPyeqBlDHvLcUZgb0FCppqOIG0GECgYEAk/GuEb3jUvEAelNoN0U2\nq13pNoqd97gAg2OMoAuFwEjML2qbBB5TxypvNAYwchBW/mJSJ6CKVpNZCtPmG8xe\nX/s3E6c2MwGpn60CqO433VpH+97Et3jKf/O/V5Zn2R9Thihhl1nG3tBfO3viPT5x\nt3jwGt3+7+d/2jgoFvot11c=\n-----END PRIVATE KEY-----\n",
+  "client_email": "my-service-account@avocado-fl511-video.iam.gserviceaccount.com",
+  "client_id": "103939173832798004539",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/my-service-account%40avocado-fl511-video.iam.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
+}
