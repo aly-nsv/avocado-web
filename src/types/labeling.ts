@@ -212,3 +212,13 @@ export interface CSVDownloadData {
   timestamp: string;
   notes: string;
 }
+
+export interface BadVideoIncident {
+  incident_id: number;
+  roadway_name: string;
+  incident_type: string;
+  description: string;
+  reason: string;
+  timestamp: string;
+  notes?: string;
+}

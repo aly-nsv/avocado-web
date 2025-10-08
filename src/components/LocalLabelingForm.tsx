@@ -141,7 +141,7 @@ export function LocalLabelingForm({
 
   const handlePreviousStep = () => {
     // Navigate back through the flow
-    const steps = ['video_quality', 'ai_suggestions', 'incidents', 'actors']
+    const steps = ['video_quality', 'ai_suggestions', 'incidents', 'actors', 'complete']
     const currentIndex = steps.indexOf(currentStep)
     if (currentIndex > 0) {
       setCurrentStep(steps[currentIndex - 1] as any)
