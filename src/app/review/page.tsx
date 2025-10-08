@@ -18,12 +18,27 @@ import { IncidentDetailsPanel } from '@/components/IncidentDetailsPanel'
 import { VideoPlayerGrid } from '@/components/VideoPlayerGrid'
 import { LabelingForm } from '@/components/LabelingForm'
 import { LocalLabelingForm } from '@/components/LocalLabelingForm'
+import labelConfig from '../../../label-types.json'
+
+interface ReviewConfiguration {
+  filters: ('crash_description' | 'accident_description' | 'disabled_vehicles' | 'accident_type' | 'other_events')[]
+  limit: number
+  offset: number
+}
 
 export default function ReviewPage() {
   const [incidents, setIncidents] = useState<ReviewIncidentData[]>([])
   const [currentIncidentIndex, setCurrentIncidentIndex] = useState(0)
-  const [isLoading, setIsLoading] = useState(true)
+  const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string>('')
+  
+  // Configuration state
+  const [isConfigured, setIsConfigured] = useState(false)
+  const [config, setConfig] = useState<ReviewConfiguration>({
+    filters: ['crash_description'],
+    limit: 400,
+    offset: 0
+  })
   
   // Local labeling session state
   const [localLabelingData, setLocalLabelingData] = useState<LocalLabelData[]>([])
@@ -40,10 +55,7 @@ export default function ReviewPage() {
     errors: {},
   })
 
-  // Fetch incidents on component mount
-  useEffect(() => {
-    fetchIncidents()
-  }, [])
+  // Note: Removed automatic fetching - now requires configuration
 
   // Initialize form state when incident changes
   useEffect(() => {
@@ -57,7 +69,13 @@ export default function ReviewPage() {
       setIsLoading(true)
       setError('')
       
-      const response = await fetch('/api/review/incidents?limit=10')
+      const params = new URLSearchParams({
+        limit: config.limit.toString(),
+        offset: config.offset.toString(),
+        filters: config.filters.join(',')
+      })
+      
+      const response = await fetch(`/api/review/incidents?${params}`)
       if (!response.ok) {
         throw new Error('Failed to fetch incidents')
       }
@@ -66,7 +84,7 @@ export default function ReviewPage() {
       setIncidents(data.incidents)
       
       if (data.incidents.length === 0) {
-        setError('No incidents with video segments found')
+        setError('No incidents with video segments found for the selected criteria')
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load incidents')
@@ -78,7 +96,7 @@ export default function ReviewPage() {
   const initializeFormState = (incident: ReviewIncidentData) => {
     const videoSelections: VideoStreamSelection[] = incident.video_segments.map(segment => ({
       segment_id: segment.segment_id,
-      selected: false,
+      selected: true, // Select all videos by default
     }))
 
     const sessionId = `session_${Date.now()}_${incident.incident.incident_id}`
@@ -114,57 +132,103 @@ export default function ReviewPage() {
     setLocalLabelingData(prev => [...prev, data])
   }
 
-  const generateCSVData = (): CSVDownloadData[] => {
-    return localLabelingData.map(data => {
+  const handleLocalLabelComplete = () => {
+    // Move to next incident after successful completion
+    if (currentIncidentIndex < incidents.length - 1) {
+      handleNextIncident()
+    }
+  }
+
+  const handleConfigSubmit = async () => {
+    setIsConfigured(true)
+    await fetchIncidents()
+  }
+
+  const handleReconfigure = () => {
+    setIsConfigured(false)
+    setIncidents([])
+    setCurrentIncidentIndex(0)
+    setError('')
+  }
+
+  const generateCSVData = () => {
+    // Use imported label config to get all possible label types
+    
+    // Get all possible label types
+    const allIncidentLabels = labelConfig.incidents.map((label: any) => label.label_type)
+    const allActorLabels = labelConfig.actors.map((label: any) => label.label_type)
+    const allLabels = [...allIncidentLabels, ...allActorLabels]
+
+    // Create header rows
+    const textHeaders = [
+      'Incident ID', 'Roadway Name', 'Incident Type', 'Description', 'Video Quality',
+      ...labelConfig.incidents.map((label: any) => label.category),
+      ...labelConfig.actors.map((label: any) => label.category),
+      'AI Labels JSON', 'Human Notes', 'Timestamp'
+    ]
+    
+    const codeHeaders = [
+      'incident_id', 'roadway_name', 'incident_type', 'description', 'video_quality',
+      ...allIncidentLabels,
+      ...allActorLabels,
+      'ai_labels_json', 'human_notes', 'timestamp'
+    ]
+
+    // Generate data rows
+    const dataRows = localLabelingData.map(data => {
       const incident = incidents.find(inc => inc.incident.incident_id === data.incident_id)?.incident
-      const avgConfidence = Object.values(data.confidence_ratings).length > 0 
-        ? Object.values(data.confidence_ratings).reduce((sum, rating) => sum + rating, 0) / Object.values(data.confidence_ratings).length
-        : 0
       
-      return {
-        incident_id: data.incident_id,
-        roadway_name: incident?.roadway_name || '',
-        incident_type: incident?.incident_type || '',
-        description: incident?.description || '',
-        video_quality: data.video_quality,
-        selected_labels: data.selected_labels.join('; '),
-        ai_suggested_labels: data.ai_suggested_labels.map(ai => `${ai.label_type} (${Math.round(ai.confidence * 100)}%)`).join('; '),
-        confidence_average: Number(avgConfidence.toFixed(2)),
-        timestamp: data.timestamp,
-        notes: data.notes || ''
-      }
+      // Create a row with basic info + binary columns for each label
+      const row: any[] = [
+        data.incident_id,
+        incident?.roadway_name || '',
+        incident?.incident_type || '',
+        incident?.description || '',
+        data.video_quality,
+      ]
+      
+      // Add binary columns for each label (1 if human selected, 0 if not)
+      allLabels.forEach(labelType => {
+        row.push(data.selected_labels.includes(labelType) ? 1 : 0)
+      })
+      
+      // Add AI labels as JSON and human notes
+      row.push(JSON.stringify(data.ai_suggested_labels))
+      row.push(data.notes || '')
+      row.push(data.timestamp)
+      
+      return row
     })
+
+    return {
+      textHeaders,
+      codeHeaders, 
+      dataRows
+    }
   }
 
   const downloadCSV = () => {
-    const csvData = generateCSVData()
-    if (csvData.length === 0) return
+    const { textHeaders, codeHeaders, dataRows } = generateCSVData()
+    if (dataRows.length === 0) return
 
-    const headers = [
-      'incident_id',
-      'roadway_name', 
-      'incident_type',
-      'description',
-      'video_quality',
-      'selected_labels',
-      'ai_suggested_labels',
-      'confidence_average',
-      'timestamp',
-      'notes'
-    ]
+    // Helper function to escape CSV values
+    const escapeCsvValue = (value: any) => {
+      const stringValue = String(value || '')
+      if (stringValue.includes(',') || stringValue.includes('"') || stringValue.includes('\n')) {
+        return `"${stringValue.replace(/"/g, '""')}"`
+      }
+      return stringValue
+    }
 
+    // Create CSV content with dual headers + data rows
     const csvContent = [
-      headers.join(','),
-      ...csvData.map(row => 
-        headers.map(header => {
-          const value = row[header as keyof CSVDownloadData]
-          // Escape commas and quotes in CSV
-          const stringValue = String(value || '')
-          if (stringValue.includes(',') || stringValue.includes('"') || stringValue.includes('\n')) {
-            return `"${stringValue.replace(/"/g, '""')}"`
-          }
-          return stringValue
-        }).join(',')
+      // First header row (text descriptions)
+      textHeaders.map(escapeCsvValue).join(','),
+      // Second header row (code labels)
+      codeHeaders.map(escapeCsvValue).join(','),
+      // Data rows
+      ...dataRows.map(row => 
+        row.map(escapeCsvValue).join(',')
       )
     ].join('\n')
 
@@ -211,7 +275,7 @@ export default function ReviewPage() {
     )
   }
 
-  if (incidents.length === 0) {
+  if (incidents.length === 0 && isConfigured) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <Card className="w-96">
@@ -222,6 +286,104 @@ export default function ReviewPage() {
                 Refresh
               </Button>
             </div>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+
+  // Configuration form filters
+  const filterOptions = [
+    { value: 'crash_description', label: 'Description contains "Crash" (case insensitive)' },
+    { value: 'accident_description', label: 'Description contains "Accident"' },
+    { value: 'disabled_vehicles', label: 'Incident Type: Disabled Vehicles' },
+    { value: 'accident_type', label: 'Incident Type: Accident' },
+    { value: 'other_events', label: 'Incident Type: Other Events' }
+  ]
+
+  // Show configuration form if not configured yet
+  if (!isConfigured) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Card className="w-96 max-w-lg">
+          <CardHeader>
+            <CardTitle>Review Configuration</CardTitle>
+            <p className="text-neutral-400 text-sm">
+              Configure filters and parameters before loading incidents
+            </p>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* Filter Selection */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Incident Filters (Select Multiple)</label>
+              <div className="space-y-2 max-h-40 overflow-y-auto">
+                {filterOptions.map(option => (
+                  <label key={option.value} className="flex items-center space-x-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={config.filters.includes(option.value as any)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setConfig(prev => ({ 
+                            ...prev, 
+                            filters: [...prev.filters, option.value as any]
+                          }))
+                        } else {
+                          setConfig(prev => ({ 
+                            ...prev, 
+                            filters: prev.filters.filter(f => f !== option.value)
+                          }))
+                        }
+                      }}
+                      className="rounded border-neutral-700 bg-surface"
+                    />
+                    <span className="text-sm">{option.label}</span>
+                  </label>
+                ))}
+              </div>
+              {config.filters.length === 0 && (
+                <p className="text-red-400 text-xs">Please select at least one filter</p>
+              )}
+            </div>
+
+            {/* Limit */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Total Video Segments Limit</label>
+              <input
+                type="number"
+                min="1"
+                max="1000"
+                value={config.limit}
+                onChange={(e) => setConfig(prev => ({ ...prev, limit: parseInt(e.target.value) || 400 }))}
+                className="w-full p-2 bg-surface border border-neutral-700 rounded text-sm"
+              />
+            </div>
+
+            {/* Offset */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Offset (Skip incidents)</label>
+              <input
+                type="number"
+                min="0"
+                value={config.offset}
+                onChange={(e) => setConfig(prev => ({ ...prev, offset: parseInt(e.target.value) || 0 }))}
+                className="w-full p-2 bg-surface border border-neutral-700 rounded text-sm"
+              />
+            </div>
+
+            <Button
+              onClick={handleConfigSubmit}
+              disabled={isLoading || config.filters.length === 0}
+              className="w-full"
+            >
+              {isLoading ? 'Loading Incidents...' : 'Load Incidents'}
+            </Button>
+
+            {error && (
+              <div className="p-3 bg-red-500/10 rounded text-red-400 text-sm">
+                {error}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -239,6 +401,12 @@ export default function ReviewPage() {
             <h1 className="text-3xl font-bold">Human-AI Validation Review</h1>
             <p className="text-neutral-400 mt-1">
               Incident {currentIncidentIndex + 1} of {incidents.length}
+            </p>
+            <p className="text-neutral-500 text-sm mt-1">
+              Filters: {config.filters.map(f => 
+                filterOptions.find(opt => opt.value === f)?.label
+              ).join(', ')} | 
+              Limit: {config.limit} | Offset: {config.offset}
             </p>
           </div>
           
@@ -262,6 +430,12 @@ export default function ReviewPage() {
               onClick={fetchIncidents}
             >
               Refresh
+            </Button>
+            <Button 
+              variant="outline"
+              onClick={handleReconfigure}
+            >
+              Reconfigure
             </Button>
           </div>
         </div>
@@ -303,9 +477,14 @@ export default function ReviewPage() {
             <div className="h-[86vh]">
               <LocalLabelingForm 
                 incident={currentIncident.incident}
+                videoSelections={formState.videoSelections}
+                onVideoSelectionsChange={(selections) => 
+                  handleFormStateChange({ videoSelections: selections })
+                }
                 onLabelSubmit={handleLocalLabelSubmit}
                 localLabelingData={localLabelingData}
                 onDownloadCSV={downloadCSV}
+                onComplete={handleLocalLabelComplete}
               />
             </div>
           </div>
