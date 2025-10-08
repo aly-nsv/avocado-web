@@ -12,7 +12,8 @@ import type {
   LabelSelection,
   AISuggestion,
   LocalLabelData,
-  CSVDownloadData
+  CSVDownloadData,
+  BadVideoIncident
 } from '@/types/labeling'
 import { IncidentDetailsPanel } from '@/components/IncidentDetailsPanel'
 import { VideoPlayerGrid } from '@/components/VideoPlayerGrid'
@@ -21,7 +22,7 @@ import { LocalLabelingForm } from '@/components/LocalLabelingForm'
 import labelConfig from '../../../label-types.json'
 
 interface ReviewConfiguration {
-  filters: ('crash_description' | 'accident_description' | 'disabled_vehicles' | 'accident_type' | 'other_events')[]
+  filters: ('crash_description' | 'accident_description' | 'disabled_vehicles' | 'accident_type' | 'other_events' | 'construction_zones' | 'incidents' | 'closures' | 'road_condition' | 'congestion')[]
   limit: number
   offset: number
 }
@@ -43,6 +44,9 @@ export default function ReviewPage() {
   // Local labeling session state
   const [localLabelingData, setLocalLabelingData] = useState<LocalLabelData[]>([])
   const [showLocalLabeling, setShowLocalLabeling] = useState(true)
+  
+  // Bad video tracking state
+  const [badVideoIncidents, setBadVideoIncidents] = useState<BadVideoIncident[]>([])
 
   // Form state for the current incident
   const [formState, setFormState] = useState<LabelingFormState>({
@@ -134,6 +138,28 @@ export default function ReviewPage() {
 
   const handleLocalLabelComplete = () => {
     // Move to next incident after successful completion
+    if (currentIncidentIndex < incidents.length - 1) {
+      handleNextIncident()
+    }
+  }
+
+  const handleBadVideoSkip = () => {
+    const currentIncident = incidents[currentIncidentIndex]
+    if (!currentIncident) return
+
+    const badVideoData: BadVideoIncident = {
+      incident_id: currentIncident.incident.incident_id,
+      roadway_name: currentIncident.incident.roadway_name,
+      incident_type: currentIncident.incident.incident_type,
+      description: currentIncident.incident.description || '',
+      reason: 'Bad video quality - skipped by user',
+      timestamp: new Date().toISOString(),
+      notes: 'Video quality was deemed too poor for accurate labeling'
+    }
+
+    setBadVideoIncidents(prev => [...prev, badVideoData])
+    
+    // Move to next incident
     if (currentIncidentIndex < incidents.length - 1) {
       handleNextIncident()
     }
@@ -243,6 +269,56 @@ export default function ReviewPage() {
     document.body.removeChild(link)
   }
 
+  const downloadBadVideosCSV = () => {
+    if (badVideoIncidents.length === 0) return
+
+    // Helper function to escape CSV values
+    const escapeCsvValue = (value: any) => {
+      const stringValue = String(value || '')
+      if (stringValue.includes(',') || stringValue.includes('"') || stringValue.includes('\n')) {
+        return `"${stringValue.replace(/"/g, '""')}"`
+      }
+      return stringValue
+    }
+
+    // Create CSV headers
+    const headers = [
+      'Incident ID',
+      'Roadway Name', 
+      'Incident Type',
+      'Description',
+      'Skip Reason',
+      'Notes',
+      'Timestamp'
+    ]
+
+    // Create CSV content
+    const csvContent = [
+      // Header row
+      headers.map(escapeCsvValue).join(','),
+      // Data rows
+      ...badVideoIncidents.map(incident => [
+        incident.incident_id,
+        incident.roadway_name,
+        incident.incident_type,
+        incident.description,
+        incident.reason,
+        incident.notes || '',
+        incident.timestamp
+      ].map(escapeCsvValue).join(','))
+    ].join('\n')
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+    const link = document.createElement('a')
+    const url = URL.createObjectURL(blob)
+    link.setAttribute('href', url)
+    link.setAttribute('download', `bad-videos-${new Date().toISOString().split('T')[0]}.csv`)
+    link.style.visibility = 'hidden'
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  }
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -295,16 +371,21 @@ export default function ReviewPage() {
   // Configuration form filters
   const filterOptions = [
     { value: 'crash_description', label: 'Description contains "Crash" (case insensitive)' },
-    { value: 'accident_description', label: 'Description contains "Accident"' },
+    // { value: 'accident_description', label: 'Description contains "Accident"' },
     { value: 'disabled_vehicles', label: 'Incident Type: Disabled Vehicles' },
-    { value: 'accident_type', label: 'Incident Type: Accident' },
-    { value: 'other_events', label: 'Incident Type: Other Events' }
+    // { value: 'accident_type', label: 'Incident Type: Accident' },
+    { value: 'other_events', label: 'Incident Type: Other Events' },
+    { value: 'construction_zones', label: 'Incident Type: Construction Zones' },
+    { value: 'incidents', label: 'Incident Type: Incidents' },
+    { value: 'closures', label: 'Incident Type: Closures' },
+    { value: 'road_condition', label: 'Incident Type: Road Condition' },
+    { value: 'congestion', label: 'Incident Type: Congestion' }
   ]
 
   // Show configuration form if not configured yet
   if (!isConfigured) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="min-h-screen  bg-background flex items-center justify-center">
         <Card className="w-96 max-w-lg">
           <CardHeader>
             <CardTitle>Review Configuration</CardTitle>
@@ -316,7 +397,7 @@ export default function ReviewPage() {
             {/* Filter Selection */}
             <div className="space-y-2">
               <label className="text-sm font-medium">Incident Filters (Select Multiple)</label>
-              <div className="space-y-2 max-h-40 overflow-y-auto">
+              <div className="space-y-2 max-h-112 overflow-y-auto">
                 {filterOptions.map(option => (
                   <label key={option.value} className="flex items-center space-x-2 cursor-pointer">
                     <input
@@ -408,9 +489,26 @@ export default function ReviewPage() {
               ).join(', ')} | 
               Limit: {config.limit} | Offset: {config.offset}
             </p>
+            <p className="text-neutral-500 text-sm mt-1">
+              Bad videos skipped: {badVideoIncidents.length} | 
+              <button 
+                onClick={downloadBadVideosCSV}
+                disabled={badVideoIncidents.length === 0}
+                className="text-primary hover:text-primary/80 underline disabled:text-neutral-500 disabled:no-underline ml-1"
+              >
+                Download Bad Videos CSV
+              </button>
+            </p>
           </div>
           
           <div className="flex gap-2">
+            <Button 
+              variant="outline" 
+              onClick={handleBadVideoSkip}
+              className="bg-red-500/10 border-red-500/50 text-red-400 hover:bg-red-500/20"
+            >
+              Bad or irrelevant video, next
+            </Button>
             <Button 
               variant="outline" 
               onClick={handlePreviousIncident}
