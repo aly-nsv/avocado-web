@@ -2,6 +2,8 @@
 
 A modern, dark-first security operations dashboard built with Next.js, TypeScript, and Tailwind CSS. Features a comprehensive component library designed for real-time monitoring and security data visualization.
 
+Force commit.
+
 ## 🚀 **Quick Start**
 
 ### **Prerequisites**
