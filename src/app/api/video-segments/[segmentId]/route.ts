@@ -120,7 +120,6 @@ export async function GET(
       'SELECT storage_bucket, storage_path, segment_filename FROM video_segments WHERE segment_id = $1',
       [parseInt(segmentId)]
     );
-    console.log('=========RESULT=========', result);
 
     if (result.rows.length === 0) {
       return NextResponse.json({
@@ -178,9 +177,7 @@ export async function GET(
       if (segment.segment_filename.endsWith('.ts')) {
         
         const mp4Path = segment.storage_path.replace(/\.ts$/, '.mp4');
-        console.log('=========MP4 PATH=========', mp4Path);
         const mp4File = bucket.file(mp4Path);
-        console.log('=========MP4 FILE=========', mp4File);
         // Check if MP4 version exists
         const [mp4Exists] = await mp4File.exists();
         

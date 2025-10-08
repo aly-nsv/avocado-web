@@ -5,8 +5,38 @@ import type { GetIncidentsResponse, ReviewIncidentData } from '@/types/labeling'
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
-    const limit = parseInt(searchParams.get('limit') || '10');
+    const limit = parseInt(searchParams.get('limit') || '100');
     const offset = parseInt(searchParams.get('offset') || '0');
+    const filtersParam = searchParams.get('filters') || 'crash_description';
+    const filters = filtersParam.split(',').filter(f => f.trim());
+
+    // Generate individual filter condition
+    const getSingleFilterCondition = (filterType: string) => {
+      switch (filterType) {
+        case 'crash_description':
+          return `(i.description ILIKE '%Crash%' OR i.description ILIKE '%crash%')`;
+        case 'accident_description':
+          return `i.description ILIKE '%Accident%'`;
+        case 'disabled_vehicles':
+          return `i.incident_type ILIKE '%Disabled Vehicles%'`;
+        case 'accident_type':
+          return `i.incident_type ILIKE '%Accident%'`;
+        case 'other_events':
+          return `i.incident_type ILIKE '%Other Events%'`;
+        default:
+          return `(i.description ILIKE '%Crash%' OR i.description ILIKE '%crash%')`;
+      }
+    };
+
+    // Generate combined filter condition with OR logic for multiple filters
+    const getMultipleFilterCondition = (filterTypes: string[]) => {
+      if (filterTypes.length === 0) {
+        return 'AND (i.description ILIKE \'%Crash%\' OR i.description ILIKE \'%crash%\')';
+      }
+      
+      const conditions = filterTypes.map(filterType => getSingleFilterCondition(filterType));
+      return `AND (${conditions.join(' OR ')})`;
+    };
 
     // Query to get incidents with their video segments (coffee version only)
     // Using the exact query structure from the user's requirements
@@ -52,29 +82,31 @@ export async function GET(request: NextRequest) {
         v.camera_region,
         v.camera_county,
         v.avocado_version,
-        v.labels,
+        v.labels as video_labels,
         v.created_at as video_created_at
       FROM incidents i
       JOIN video_segments v ON i.incident_id = v.incident_id
       WHERE v.avocado_version LIKE '%coffee%'
         AND i.labels IS NOT NULL
-        AND i.labels::text != '[]'
-        AND i.labels::text != 'null'
-        AND i.labels::text != '""'
-        AND LENGTH(i.labels::text) > 2
+        AND i.labels != '[]'
+        ${getMultipleFilterCondition(filters)}
       ORDER BY i.incident_id, v.segment_id
       LIMIT $1 OFFSET $2
     `;
 
     const result = await db.query(incidentsQuery, [limit, offset]);
+    console.log('=========LENGTH=========', result.rows.length);
 
     // Group results by incident_id
     const incidentMap = new Map<number, any>();
+    let count = 0;
     
     result.rows.forEach((row: any) => {
+      
       const incidentId = row.incident_id;
       
       if (!incidentMap.has(incidentId)) {
+        count++;
         incidentMap.set(incidentId, {
           incident: {
             incident_id: row.incident_id,
@@ -98,14 +130,7 @@ export async function GET(request: NextRequest) {
             scraped_at: row.scraped_at,
             created_at: row.created_at,
             updated_at: row.updated_at,
-            labels: (() => {
-              try {
-                return typeof row.labels === 'string' ? JSON.parse(row.labels) : (row.labels || []);
-              } catch (e) {
-                console.warn('Failed to parse labels JSON:', row.labels);
-                return [];
-              }
-            })(),
+            labels: row.labels || [],
           },
           video_segments: [],
           cameras_involved: new Set<string>()
@@ -157,14 +182,13 @@ export async function GET(request: NextRequest) {
       JOIN video_segments v ON i.incident_id = v.incident_id
       WHERE v.avocado_version LIKE '%coffee%'
         AND i.labels IS NOT NULL
-        AND i.labels::text != '[]'
-        AND i.labels::text != 'null'
-        AND i.labels::text != '""'
-        AND LENGTH(i.labels::text) > 2
+        AND i.labels != '[]'
+        ${getMultipleFilterCondition(filters)}
     `;
     
     const countResult = await db.query(countQuery);
     const totalCount = parseInt(countResult.rows[0]?.total || '0');
+    console.log('=========TOTAL COUNT=========', totalCount);
 
     const response: GetIncidentsResponse = {
       incidents: reviewIncidents,
