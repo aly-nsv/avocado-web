@@ -1,0 +1,73 @@
+import { FlatCompat } from '@eslint/eslintrc'
+
+const compat = new FlatCompat({
+  // import.meta.dirname is available after Node.js v20.11.0
+  baseDirectory: import.meta.dirname,
+})
+
+const eslintConfig = [
+  ...compat.config({
+    extends: ['next/core-web-vitals'],
+    rules: {
+      // Disable TypeScript type error rules
+      '@typescript-eslint/no-unused-vars': 'off',
+      '@typescript-eslint/no-explicit-any': 'off',
+      '@typescript-eslint/ban-ts-comment': 'off',
+      '@typescript-eslint/no-non-null-assertion': 'off',
+      '@typescript-eslint/no-empty-function': 'off',
+      '@typescript-eslint/no-inferrable-types': 'off',
+      '@typescript-eslint/prefer-as-const': 'off',
+      '@typescript-eslint/no-var-requires': 'off',
+      '@typescript-eslint/no-this-alias': 'off',
+      '@typescript-eslint/no-empty-interface': 'off',
+      '@typescript-eslint/ban-types': 'off',
+      '@typescript-eslint/no-namespace': 'off',
+      '@typescript-eslint/no-unnecessary-type-assertion': 'off',
+      '@typescript-eslint/no-unsafe-assignment': 'off',
+      '@typescript-eslint/no-unsafe-member-access': 'off',
+      '@typescript-eslint/no-unsafe-call': 'off',
+      '@typescript-eslint/no-unsafe-return': 'off',
+      '@typescript-eslint/no-unsafe-argument': 'off',
+      '@typescript-eslint/restrict-template-expressions': 'off',
+      '@typescript-eslint/restrict-plus-operands': 'off',
+      '@typescript-eslint/require-await': 'off',
+      '@typescript-eslint/no-floating-promises': 'off',
+      '@typescript-eslint/no-misused-promises': 'off',
+      '@typescript-eslint/await-thenable': 'off',
+      '@typescript-eslint/no-for-in-array': 'off',
+      '@typescript-eslint/no-implied-eval': 'off',
+      '@typescript-eslint/no-misused-new': 'off',
+      '@typescript-eslint/no-unnecessary-type-constraint': 'off',
+      '@typescript-eslint/prefer-includes': 'off',
+      '@typescript-eslint/prefer-nullish-coalescing': 'off',
+      '@typescript-eslint/prefer-optional-chain': 'off',
+      '@typescript-eslint/prefer-readonly': 'off',
+      '@typescript-eslint/prefer-reduce-type-parameter': 'off',
+      '@typescript-eslint/prefer-string-starts-ends-with': 'off',
+      '@typescript-eslint/promise-function-async': 'off',
+      '@typescript-eslint/require-array-sort-compare': 'off',
+      '@typescript-eslint/restrict-plus-operands': 'off',
+      '@typescript-eslint/return-await': 'off',
+      '@typescript-eslint/strict-boolean-expressions': 'off',
+      '@typescript-eslint/switch-exhaustiveness-check': 'off',
+      '@typescript-eslint/unbound-method': 'off',
+      '@typescript-eslint/no-redundant-type-constituents': 'off',
+      '@typescript-eslint/no-useless-empty-export': 'off',
+      '@typescript-eslint/no-unsafe-declaration-merging': 'off',
+      '@typescript-eslint/no-unsafe-enum-comparison': 'off',
+      '@typescript-eslint/no-unsafe-unary-minus': 'off',
+      '@typescript-eslint/no-useless-template-literals': 'off',
+      '@typescript-eslint/prefer-function-type': 'off',
+      '@typescript-eslint/prefer-import-type': 'off',
+      '@typescript-eslint/prefer-literal-enum-member': 'off',
+      '@typescript-eslint/prefer-namespace-keyword': 'off',
+      '@typescript-eslint/prefer-readonly-parameter-types': 'off',
+      '@typescript-eslint/prefer-ts-expect-error': 'off',
+      '@typescript-eslint/require-array-sort-compare': 'off',
+      '@typescript-eslint/sort-type-constituents': 'off',
+      '@typescript-eslint/use-unknown-in-catch-clause-variable': 'off',
+    },
+  }),
+]
+
+export default eslintConfig

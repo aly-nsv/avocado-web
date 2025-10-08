@@ -1,14 +1,14 @@
 // PostgreSQL database connection for FL511 incidents
 import { Pool, PoolClient, QueryResult } from 'pg';
 
-// Database configuration from crash_alert_monitor.py
+// Database configuration from environment variables
 const dbConfig = {
-  host: '34.42.128.70',
-  database: 'fl511_incidents', 
-  user: 'fl511_user',
-  password: 'AfUa9sQ7r6PcXufDVPJhwK',
-  port: 5432,
-  ssl: false, // Set to true if your PostgreSQL requires SSL
+  host: process.env.DATABASE_HOST || '34.42.128.70',
+  database: process.env.DATABASE_NAME || 'fl511_incidents',
+  user: process.env.DATABASE_USER || 'fl511_user',
+  password: process.env.DATABASE_PASSWORD,
+  port: parseInt(process.env.DATABASE_PORT || '5432'),
+  ssl: process.env.DATABASE_SSL === 'true',
   max: 20, // Maximum number of clients in the pool
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 2000,
