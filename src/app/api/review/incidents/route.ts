@@ -23,6 +23,16 @@ export async function GET(request: NextRequest) {
           return `i.incident_type ILIKE '%Accident%'`;
         case 'other_events':
           return `i.incident_type ILIKE '%Other Events%'`;
+        case 'construction_zones':
+          return `i.incident_type ILIKE '%Construction Zones%'`;
+        case 'incidents':
+          return `i.incident_type ILIKE '%Incidents%'`;
+        case 'closures':
+          return `i.incident_type ILIKE '%Closures%'`;
+        case 'road_condition':
+          return `i.incident_type ILIKE '%Road Condition%'`;
+        case 'congestion':
+          return `i.incident_type ILIKE '%Congestion%'`;
         default:
           return `(i.description ILIKE '%Crash%' OR i.description ILIKE '%crash%')`;
       }

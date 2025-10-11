@@ -1,0 +1,68 @@
+
+Going to walk through how we link insights to video
+query insights joined with actor, sensors, locations, to get sensor identifier and start time
+
+SELECT DISTINCT wsi.insight_id, wsi.start_ts, CONCAT(l.identifier, "-",s.identifier) as camera_identifier FROM `cav-hubint-prod.cav_i94_prod_live.WorldStateInsight_v2` wsi
+JOIN `cav-hubint-prod.cav_i94_prod_live.WorldStateActorIndex_v2` wsai ON wsai.actor_id = wsi.actor_id
+JOIN `cav-hubint-prod.cav_hubint_prod_management.Sensors_v2` s ON s.sensor_id = wsai.sensor_id
+JOIN `cav-hubint-prod.cav_hubint_prod_management.Locations_v2` l ON l.location_id = s.location_id
+WHERE TIMESTAMP_TRUNC(update_ts, HOUR) = TIMESTAMP("2025-10-08T12:00:00Z")
+AND TIMESTAMP_TRUNC(observation_ts, HOUR) = TIMESTAMP("2025-10-08T12:00:00Z")
+GROUP BY wsi.insight_id, wsi.start_ts, l.identifier, s.identifier
+2. Use video fetcher to fetch the URI using the parameters returned by this query
+https://github.com/Cavnue/platform/blob/9d59b75158bfd5f09382ae254c1aba71ec9c2ca3/python/services/insight-lens/src/insight_lens/app.py#L424-L429
+# Just fetch the raw video without processing
+video_bytes, gcs_url = st.session_state.video_fetcher.fetch_raw_video(
+  location=insight.location_identifier,
+  sensor=insight.sensor_identifier,
+  timestamp=millisecond_timestamp_to_datetime(insight.start_ms),
+)
+
+This mostly boils down to this function:
+https://github.com/Cavnue/platform/blob/9d59b75158bfd5f09382ae254c1aba71ec9c2ca3/python/services/insight-lens/src/insight_lens/video_fetcher.py#L86C1-L124C20
+    def _get_video_url(
+        self,
+        location: str,
+        sensor: str,
+        timestamp: dt.datetime,
+        buffer_ms: int = 30 * conversion.SEC_TO_MS,
+    ) -> Optional[Tuple[int, str, str, int]]:
+        """Get the video URL that encompasses the given timestamp.
+
+        Args:
+            location: The location identifier (e.g. "prod-i94m-mm1880")
+            sensor: The sensor identifier (e.g. "camera-2")
+            timestamp: The timestamp to find video for
+            buffer_ms: Buffer time in milliseconds (default 30 seconds)
+
+        Returns:
+            Tuple of (video_start_ts, sensor_id, gs_uri, video_duration_ms) if found, None otherwise
+        """
+        bucket = self._get_bucket()
+        prefix = f"{location}/{sensor}/{timestamp.strftime('%Y/%m/%d')}"
+        videos = list(self.gcs_client.list_blobs(bucket, prefix=prefix))
+
+        timestamp_ms = datetime_to_millisecond_timestamp(timestamp)
+        for blob in videos:
+            if (
+                Path(blob.name).suffix == ".mp4"
+                and int(Path(blob.name).stem) + buffer_ms >= timestamp_ms
+                and int(Path(blob.name).stem) <= timestamp_ms + buffer_ms
+            ):
+                video_start_ts = int(Path(blob.name).stem)
+                sensor_id = f"{location}-{sensor}"
+                return (
+                    video_start_ts,
+                    sensor_id,
+                    f"gs://{blob.bucket.name}/{blob.name}",
+                    buffer_ms,
+                )
+
+        return None
+
+Essentially list out all the video blobs for the hour this start_time falls into
+find the exact video using the known video lengths (30 seconds) to find the interval/video the start_time falls into
+
+If you think it's helpful, we could write a simple python or bash script to do those GCS searches to return the video URI
+
+I pulled the code snippets for the links he sent me, since I know you don't have Github access. Let me know if it's not good enough, and I'll pull the files.
