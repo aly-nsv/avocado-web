@@ -100,7 +100,6 @@ export async function GET(request: NextRequest) {
         AND i.labels IS NOT NULL
         AND i.labels != '[]'
         ${getMultipleFilterCondition(filters)}
-        AND i.updated_at > '2025-09-14'::timestamp
       ORDER BY i.incident_id, v.segment_id
       LIMIT $1 OFFSET $2
     `;
